@@ -1,14 +1,14 @@
 /**
  * config.js — Backend API Configuration
  * ──────────────────────────────────────
- * On Vercel: front-end + back-end live on the SAME domain.
- * API calls are relative (/scan, /get_stock_details, /get_news).
- * No separate URL needed — leave BACKEND_URL = "".
- *
- * Only set BACKEND_URL if you host backend elsewhere.
+ * BACKEND_URL: Your Render backend URL.
+ * Set this to your Render service URL or custom api subdomain.
+ * Example: "https://api.yourdomain.com"
+ *          "https://analysofinal-backend.onrender.com"
  */
 
-const BACKEND_URL = ""; // Same-origin on Vercel — leave empty
+// ✅ SET THIS to your Render backend URL after deploying:
+const BACKEND_URL = "https://analysofinal-backend.onrender.com";
 
 const API_BASE = BACKEND_URL ||
     (window.location.protocol === 'file:' ? 'http://127.0.0.1:5001' : '');

@@ -1,8 +1,11 @@
+# Analyso - AI Stock Scanner India
+# https://www.analyso.online
+
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://analyso.in/sitemap.xml
+# Sitemap
+Sitemap: https://www.analyso.online/sitemap.xml
 
-# Crawl-delay (optional, be kind to bots)
+# Crawl-delay (optional, be polite to bots)
 Crawl-delay: 1

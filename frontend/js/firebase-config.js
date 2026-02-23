@@ -1,12 +1,31 @@
 /**
- * firebase-config.js — Simple Name + Phone Login (localStorage only)
- * ───────────────────────────────────────────────────────────────────
- * No external database needed. User data is stored in localStorage
- * to gate access to the app. Simple, fast, and free.
+ * firebase-config.js — Name + Phone Login
+ * ─────────────────────────────────────────
+ * Saves user data to Firebase Realtime Database (free, no billing needed).
+ * Uses localStorage for session tracking on the client side.
  */
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+    getDatabase, ref, push, get, query, orderByChild, equalTo
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// ── Firebase project config ──────────────────────────────────
+const firebaseConfig = {
+    apiKey: "AIzaSyBilZw28YWuTXnMtNRmDYyTITzznOSZABs",
+    authDomain: "analyso-7ee72.firebaseapp.com",
+    projectId: "analyso-7ee72",
+    storageBucket: "analyso-7ee72.firebasestorage.app",
+    messagingSenderId: "732917431870",
+    appId: "1:732917431870:web:12b7e7846d86db48eb1b6f",
+    databaseURL: "https://analyso-7ee72-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 // ── Login Handler ────────────────────────────────────────────
-window.handleLogin = function (event) {
+window.handleLogin = async function (event) {
     event.preventDefault();
 
     const nameInput = document.getElementById("nameInput");
@@ -34,14 +53,38 @@ window.handleLogin = function (event) {
     loginBtn.disabled = true;
     loginBtn.textContent = "⏳ Signing in...";
 
-    // Save session to localStorage
+    try {
+        // Save user to Firebase Realtime Database
+        const usersRef = ref(db, "users");
+
+        // Check if phone already exists
+        const phoneQuery = query(usersRef, orderByChild("phone"), equalTo(phone));
+        const snapshot = await get(phoneQuery);
+
+        if (!snapshot.exists()) {
+            // New user — save to database
+            await push(usersRef, {
+                name: name,
+                phone: phone,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            });
+            console.log("✅ New user saved to Firebase:", name);
+        } else {
+            console.log("👋 Existing user logged in:", name);
+        }
+
+    } catch (err) {
+        // If Firebase fails, still let user in (localStorage will handle session)
+        console.warn("⚠️ Firebase save skipped:", err.message);
+    }
+
+    // Save session to localStorage (always, even if Firebase fails)
     localStorage.setItem("analyso_user", JSON.stringify({
         name: name,
         phone: phone,
         loggedInAt: new Date().toISOString()
     }));
-
-    console.log("✅ User logged in:", name);
 
     // Redirect to main app
     window.location.href = "index.html";
@@ -63,7 +106,6 @@ window.analysoLogout = function () {
         const userData = JSON.parse(user);
 
         if (isLoginPage) {
-            // Already logged in, redirect to app
             window.location.href = "index.html";
             return;
         }
@@ -81,7 +123,6 @@ window.analysoLogout = function () {
         if (typeof window.showDisclaimer === "function") window.showDisclaimer();
 
     } else {
-        // Not logged in
         if (!isLoginPage) window.location.href = "login.html";
     }
 })();

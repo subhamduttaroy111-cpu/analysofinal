@@ -1,14 +1,20 @@
 import os
 import json
-from dotenv import load_dotenv
-import google.generativeai as genai
-
-# Load environment variables
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not needed on Render (env vars set in dashboard)
+try:
+    import google.generativeai as genai
+    _GENAI_AVAILABLE = True
+except ImportError:
+    genai = None
+    _GENAI_AVAILABLE = False
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and _GENAI_AVAILABLE:
     genai.configure(api_key=GEMINI_API_KEY)
 
 # Professional Analyst System Prompt
@@ -129,7 +135,7 @@ def generate_market_analysis(symbol, stock_data, technical_bias, indicators):
         Dict with structured analysis or error message
     """
     
-    if not GEMINI_API_KEY:
+    if not GEMINI_API_KEY or not _GENAI_AVAILABLE:
         return {
             "error": True,
             "message": "AI analysis unavailable. Please configure GEMINI_API_KEY in .env file."

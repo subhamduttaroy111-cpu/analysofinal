@@ -88,15 +88,15 @@ def register_routes(app):
         interval = config["interval"]
         min_data_points = config["min_data_points"]
 
-        # ⚡ Fast parallel download with threads=True
-        print(f"⚡ Downloading {len(STOCKS)} stocks with threading enabled...")
+        # ⚡ Safe serial download to save memory on 512MB RAM server
+        print(f"⚡ Downloading {len(STOCKS)} stocks (threading disabled to save memory)...")
         data = yf.download(
             STOCKS,
             period=period,
             interval=interval,
             group_by='ticker',
             progress=False,
-            threads=True
+            threads=False # Disabled threading to save RAM
         )
 
         def process_stock(s):
@@ -153,10 +153,10 @@ def register_routes(app):
                 print(f"Error: {s} - {e}")
             return None
 
-        # ⚡ Process 8 stocks simultaneously
+        # ⚡ Process 2 stocks simultaneously to prevent Out-Of-Memory on Free Tier
         results = []
-        print(f"⚡ Processing {len(STOCKS)} stocks with 8 parallel workers...")
-        with ThreadPoolExecutor(max_workers=8) as executor:
+        print(f"⚡ Processing {len(STOCKS)} stocks with 2 parallel workers...")
+        with ThreadPoolExecutor(max_workers=2) as executor:
             futures = {executor.submit(process_stock, s): s for s in STOCKS}
             for future in as_completed(futures):
                 result = future.result()

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: analysofinal-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    # Only 1 worker process to save memory, binding to Dynamic Port 
+    startCommand: "gunicorn --workers 1 --threads 4 --chdir backend server:app"
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: NLTK_DATA
+        value: /tmp/nltk_data

@@ -13,4 +13,4 @@ services:
         value: /tmp/nltk_data
       # ✅ UPDATE these with your actual domains after deploying frontend:
       - key: ALLOWED_ORIGINS
-        value: "https://analysofinal.vercel.app,https://yourdomain.com,https://www.yourdomain.com"
+        value: "https://analyso.online,https://www.analyso.online,https://analysofinal.vercel.app"

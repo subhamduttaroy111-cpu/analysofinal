@@ -1,0 +1,41 @@
+async function openModal(i) {
+    const s = STOCKS[i];
+    const modal = document.getElementById("modal");
+    const mTitle = document.getElementById("mTitle");
+    const mReasons = document.getElementById("mReasons");
+    const mSector = document.getElementById("mSector");
+    const mHigh = document.getElementById("mHigh");
+    const mLow = document.getElementById("mLow");
+    const mCap = document.getElementById("mCap");
+
+    // Store stock symbol for news
+    currentStockSymbol = s.symbol;
+
+    // Reset news section
+    document.getElementById("newsContent").style.display = "none";
+    document.getElementById("newsLoader").style.display = "none";
+    document.getElementById("newsError").style.display = "none";
+    document.getElementById("viewNewsBtn").textContent = "View Top 5 News";
+    document.getElementById("viewNewsBtn").disabled = false;
+
+    modal.style.display = "flex";
+    mTitle.innerText = s.symbol;
+    loadChart(s.symbol);
+    mReasons.innerHTML = s.reason.map(r => `<li>${r}</li>`).join("");
+
+    try {
+        const res = await fetch(`${API_URL}/get_stock_details`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol: s.symbol })
+        });
+        const json = await res.json();
+
+        if (json.status === "success") {
+            mSector.innerText = json.fundamentals.sector;
+            mHigh.innerText = json.fundamentals.high52 !== 'N/A' ? `₹${json.fundamentals.high52}` : 'N/A';
+            mLow.innerText = json.fundamentals.low52 !== 'N/A' ? `₹${json.fundamentals.low52}` : 'N/A';
+            mCap.innerText = json.fundamentals.marketCap !== 'N/A' ? formatCap(json.fundamentals.marketCap) : 'N/A';
+        }
+    } catch (e) { }
+}

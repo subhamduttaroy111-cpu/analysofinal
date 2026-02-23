@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trade Architect | Stock Analysis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+<header>
+    <h1>ANALYSO <span>V3 FIXED</span></h1>
+    <div class="header-badge">LOCALHOST • NSE</div>
+</header>
+
+<div class="hero">
+    <div>
+        <h2>Advanced Market Intelligence</h2>
+        <p>
+            Institutional-grade analysis engine powered by MACD, RSI, Volume analysis, 
+            and dynamic risk management.
+        </p>
+        <ul>
+            <li>MACD + RSI + EMA confirmation</li>
+            <li>Risk-reward optimized (min 1.2:1)</li>
+            <li>Volume-validated breakouts</li>
+            <li>ATR-based stop losses</li>
+        </ul>
+    </div>
+    <div class="hero-visual">
+        📊<br>Multi-Indicator<br>Engine
+    </div>
+</div>
+
+<div class="controls">
+    <div class="controls-box">
+        <select id="mode">
+            <option value="INTRADAY">🚀 Intraday (15m)</option>
+            <option value="SWING">🌊 Swing (Daily)</option>
+            <option value="LONG_TERM">💎 Long Term</option>
+        </select>
+        <button onclick="runScan()">SCAN MARKET</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="loader" class="loader">
+        <div class="spinner"></div>
+        <b>Scanning stocks...</b>
+        <small>Analyzing MACD, RSI, Volume & Price Action</small>
+    </div>
+    <div id="grid" class="grid"></div>
+</div>
+
+<div id="modal" class="modal" onclick="closeModal(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 id="mTitle"></h2>
+            <button class="close-btn" onclick="closeModal()">✕ Close</button>
+        </div>
+
+        <div style="margin: 24px 0;">
+            <iframe id="tv_iframe" style="width:100%; height:460px;"></iframe>
+        </div>
+
+        <div class="modal-section">
+            <h4>📊 Fundamentals</h4>
+            <div class="fundamentals-grid">
+                <div class="fund-item">
+                    <label>Sector</label>
+                    <value id="mSector">-</value>
+                </div>
+                <div class="fund-item">
+                    <label>52W High</label>
+                    <value id="mHigh">-</value>
+                </div>
+                <div class="fund-item">
+                    <label>52W Low</label>
+                    <value id="mLow">-</value>
+                </div>
+                <div class="fund-item">
+                    <label>Market Cap</label>
+                    <value id="mCap">-</value>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <h4>✓ Analysis Logic</h4>
+            <ul id="mReasons" class="reasons-list"></ul>
+        </div>
+
+        <div class="modal-section news-section">
+            <div class="news-header-section">
+                <h4>📰 Latest Stock News</h4>
+                <button id="viewNewsBtn" class="news-btn" onclick="viewStockNews()">
+                    View Top 5 News
+                </button>
+            </div>
+            
+            <div id="newsLoader" class="news-loader" style="display:none;">
+                <div class="spinner-small"></div>
+                <span>Loading news...</span>
+            </div>
+
+            <div id="newsContent" style="display:none;">
+                <div class="news-container">
+                    <div id="newsList" class="news-list"></div>
+                </div>
+            </div>
+
+            <div id="newsError" class="news-error" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="js/script.js"></script>
+
+</body>
+</html>

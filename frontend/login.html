@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ─── SEO: Login page — noindex (no value in indexing login) ─── -->
+  <title>Sign In | Analyso – Free Indian Stock Market Scanner</title>
+  <meta name="description" content="Sign in to Analyso – India's free AI-powered stock scanner for NSE and BSE. Access intraday signals, swing trading picks, and long-term stock analysis.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://analyso.in/login.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Sign In | Analyso – Free Indian Stock Market Scanner">
+  <meta property="og:description" content="Sign in to access free AI-powered Indian stock analysis for NSE and BSE — intraday, swing trading and long-term picks.">
+  <meta property="og:image" content="https://analyso.in/og-image.png">
+  <meta property="og:site_name" content="Analyso">
+  <meta property="og:locale" content="en_IN">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+    /* ── Login page layout ── */
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 50%, #faf5ff 100%);
+    }
+
+    /* ── Login card ── */
+    .login-card {
+      background: #ffffff;
+      padding: 44px 40px 36px;
+      border-radius: 28px;
+      box-shadow:
+        0 24px 48px rgba(0, 0, 0, 0.09),
+        0 0 0 1px rgba(255, 255, 255, 0.7);
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+      animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes cardIn {
+      from { transform: translateY(24px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* ── Logo / Brand ── */
+    .login-logo {
+      font-size: 2.6rem;
+      font-weight: 800;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: -1px;
+    }
+
+    .login-tagline {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    /* ── Headings ── */
+    .login-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .login-subtitle {
+      color: #64748b;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    /* ── Features List ── */
+    .login-features {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+
+    .login-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .login-feature-item .fi-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* ── Google Button ── */
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 15px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      background: white;
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      font-family: 'Inter', sans-serif;
+      /* Override global button styles */
+      animation: none;
+      background-image: none;
+    }
+
+    .google-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+      border-color: #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .google-btn:active {
+      transform: translateY(0);
+    }
+
+    .google-btn::before {
+      display: none; /* override ripple */
+    }
+
+    .google-icon {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    /* ── Educational Note ── */
+    .login-edu-note {
+      margin-top: 20px;
+      padding: 12px 16px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      color: #78350f;
+      line-height: 1.5;
+    }
+
+    .login-edu-note strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 0.8rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 32px 24px 28px;
+        border-radius: 22px;
+      }
+
+      .login-logo {
+        font-size: 2.2rem;
+      }
+
+      .login-title {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-card" role="main">
+
+    <!-- Brand -->
+    <span class="login-logo" aria-label="Analyso">ANALYSO</span>
+    <p class="login-tagline">Indian Stock Market Scanner</p>
+
+    <!-- Heading -->
+    <h1 class="login-title">Welcome Back 👋</h1>
+    <p class="login-subtitle">
+      Sign in to access free AI-powered stock analysis for
+      <strong>NSE &amp; BSE</strong> — intraday, swing, and long-term picks.
+    </p>
+
+    <!-- Features preview -->
+    <div class="login-features" aria-label="Platform features">
+      <div class="login-feature-item">
+        <span class="fi-icon">🚀</span>
+        <span>Intraday Scanner — Best NSE/BSE stocks today</span>
+      </div>
+      <div class="login-feature-item">
+        <span class="fi-icon">🌊</span>
+        <span>Swing Trading — Daily signals with targets &amp; SL</span>
+      </div>
+      <div class="login-feature-item">
+        <span class="fi-icon">💎</span>
+        <span>Long-Term Picks — Nifty 50 &amp; Midcap analysis</span>
+      </div>
+    </div>
+
+    <!-- Sign-in button -->
+    <button onclick="googleLogin()" class="google-btn"
+            aria-label="Sign in with Google to access Analyso dashboard">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+           alt="Google logo" class="google-icon">
+      Sign in with Google — It's Free
+    </button>
+
+    <!-- Educational disclaimer note -->
+    <div class="login-edu-note" role="note" aria-label="Educational disclaimer">
+      <strong>📚 Educational Platform Only</strong>
+      Analyso provides stock analysis for educational purposes only and does
+      not constitute investment advice. By signing in, you acknowledge this.
+    </div>
+
+  </div>
+
+  <!-- Firebase Auth -->
+  <script type="module" src="js/firebase-config.js"></script>
+
+</body>
+</html>

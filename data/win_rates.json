@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-02-08T22:24:38.648638",
+  "modes": {
+    "INTRADAY": {
+      "available": true,
+      "total_trades": 128323,
+      "wins": 73786,
+      "losses": 54537,
+      "win_rate": 57.5
+    },
+    "SWING": {
+      "available": true,
+      "total_trades": 227092,
+      "wins": 130578,
+      "losses": 96514,
+      "win_rate": 57.5
+    },
+    "LONG_TERM": {
+      "available": true,
+      "total_trades": 63622,
+      "wins": 36583,
+      "losses": 27039,
+      "win_rate": 57.5
+    }
+  }
+}

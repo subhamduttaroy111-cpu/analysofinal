@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://analyso.in/sitemap.xml
+
+# Crawl-delay (optional, be kind to bots)
+Crawl-delay: 1

@@ -1,30 +1,12 @@
 /**
- * firebase-config.js — Name + Phone Authentication with Firestore
- * ─────────────────────────────────────────────────────────────────
- * Uses Firestore to save user data (name + phone).
- * Uses localStorage to track login session (no Google Auth needed).
+ * firebase-config.js — Simple Name + Phone Login (localStorage only)
+ * ───────────────────────────────────────────────────────────────────
+ * No external database needed. User data is stored in localStorage
+ * to gate access to the app. Simple, fast, and free.
  */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// ── Firebase project config ──────────────────────────────────
-const firebaseConfig = {
-    apiKey: "AIzaSyBilZw28YWuTXnMtNRmDYyTITzznOSZABs",
-    authDomain: "analyso-7ee72.firebaseapp.com",
-    projectId: "analyso-7ee72",
-    storageBucket: "analyso-7ee72.firebasestorage.app",
-    messagingSenderId: "732917431870",
-    appId: "1:732917431870:web:12b7e7846d86db48eb1b6f"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
 // ── Login Handler ────────────────────────────────────────────
-window.handleLogin = async function (event) {
+window.handleLogin = function (event) {
     event.preventDefault();
 
     const nameInput = document.getElementById("nameInput");
@@ -52,42 +34,17 @@ window.handleLogin = async function (event) {
     loginBtn.disabled = true;
     loginBtn.textContent = "⏳ Signing in...";
 
-    try {
-        // Check if user already exists in Firestore
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("phone", "==", phone));
-        const querySnapshot = await getDocs(q);
+    // Save session to localStorage
+    localStorage.setItem("analyso_user", JSON.stringify({
+        name: name,
+        phone: phone,
+        loggedInAt: new Date().toISOString()
+    }));
 
-        if (querySnapshot.empty) {
-            // New user — save to Firestore
-            await addDoc(usersRef, {
-                name: name,
-                phone: phone,
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp()
-            });
-            console.log("✅ New user saved to Firestore:", name);
-        } else {
-            console.log("👋 Existing user logged in:", name);
-        }
+    console.log("✅ User logged in:", name);
 
-        // Save session to localStorage
-        localStorage.setItem("analyso_user", JSON.stringify({
-            name: name,
-            phone: phone,
-            loggedInAt: new Date().toISOString()
-        }));
-
-        // Redirect to main app
-        window.location.href = "index.html";
-
-    } catch (err) {
-        console.error("Login error:", err);
-        errorDiv.textContent = "Something went wrong. Please try again.";
-        errorDiv.style.display = "block";
-        loginBtn.disabled = false;
-        loginBtn.textContent = "🚀 Enter Analyso — It's Free";
-    }
+    // Redirect to main app
+    window.location.href = "index.html";
 };
 
 // ── Logout ───────────────────────────────────────────────────

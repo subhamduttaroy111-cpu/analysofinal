@@ -7,22 +7,22 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getDatabase, ref, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getFirestore, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ── Firebase project config ──────────────────────────────────
 const firebaseConfig = {
-    apiKey: "AIzaSyBilZw28YWuTXnMtNRmDYyTITzznOSZABs",
-    authDomain: "analyso-7ee72.firebaseapp.com",
-    projectId: "analyso-7ee72",
-    storageBucket: "analyso-7ee72.firebasestorage.app",
-    messagingSenderId: "732917431870",
-    appId: "1:732917431870:web:12b7e7846d86db48eb1b6f",
-    databaseURL: "https://analyso-7ee72-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyBf6lC9Vu8JH4J_6zZsgoKhHMSTkn1RzGw",
+    authDomain: "analysodb.firebaseapp.com",
+    projectId: "analysodb",
+    storageBucket: "analysodb.firebasestorage.app",
+    messagingSenderId: "1000715298283",
+    appId: "1:1000715298283:web:50326294e98d1a10e225ae",
+    measurementId: "G-KP5Q2G5QX9"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getDatabase(app);
+const db = getFirestore(app);
 
 // ── UI Toggle Logic ──────────────────────────────────────────
 let isSignupMode = false;
@@ -71,10 +71,10 @@ if (loginForm) {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // Save to realtime database using set()
+                // Save to Firestore using setDoc()
                 const timestamp = new Date().toISOString();
                 try {
-                    await set(ref(db, `users/${user.uid}`), {
+                    await setDoc(doc(db, "users", user.uid), {
                         email: user.email,
                         uid: user.uid,
                         createdAt: timestamp,
@@ -90,10 +90,10 @@ if (loginForm) {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // Save last login to realtime database using update()
+                // Save last login to Firestore using updateDoc()
                 const timestamp = new Date().toISOString();
                 try {
-                    await update(ref(db, `users/${user.uid}`), {
+                    await updateDoc(doc(db, "users", user.uid), {
                         lastLogin: timestamp
                     });
                 } catch (dbErr) {

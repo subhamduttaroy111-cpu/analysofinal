@@ -7,8 +7,8 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-    getFirestore, collection, addDoc, query, where, getDocs
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    getDatabase, ref, push, get, query, orderByChild, equalTo
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // ── Firebase project config ──────────────────────────────────
 const firebaseConfig = {
@@ -22,7 +22,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getDatabase(app);
 
 // ── Login Handler ────────────────────────────────────────────
 window.handleLogin = async function (event) {
@@ -54,29 +54,29 @@ window.handleLogin = async function (event) {
     loginBtn.textContent = "⏳ Signing in...";
 
     try {
-        // Save user to Firebase Firestore
-        const usersRef = collection(db, "users");
+        // Save user to Firebase Realtime Database
+        const usersRef = ref(db, "users");
 
         // Check if phone already exists
-        const phoneQuery = query(usersRef, where("phone", "==", phone));
-        const snapshot = await getDocs(phoneQuery);
+        const phoneQuery = query(usersRef, orderByChild("phone"), equalTo(phone));
+        const snapshot = await get(phoneQuery);
 
-        if (snapshot.empty) {
+        if (!snapshot.exists()) {
             // New user — save to database
-            await addDoc(usersRef, {
+            await push(usersRef, {
                 name: name,
                 phone: phone,
                 createdAt: new Date().toISOString(),
                 lastLogin: new Date().toISOString()
             });
-            console.log("✅ New user saved to Firestore:", name);
+            console.log("✅ New user saved to Firebase:", name);
         } else {
             console.log("👋 Existing user logged in:", name);
         }
 
     } catch (err) {
-        // If Firebase fails, log the error but still let user in (localStorage will handle session)
-        console.error("⚠️ Firebase save failed (Check Firestore rules):", err);
+        // If Firebase fails, still let user in (localStorage will handle session)
+        console.warn("⚠️ Firebase save skipped:", err.message);
     }
 
     // Save session to localStorage (always, even if Firebase fails)

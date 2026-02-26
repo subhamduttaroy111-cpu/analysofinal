@@ -73,14 +73,17 @@ if (loginForm) {
 
                 // Save to realtime database using set()
                 const timestamp = new Date().toISOString();
-                await set(ref(db, `users/${user.uid}`), {
-                    email: user.email,
-                    uid: user.uid,
-                    createdAt: timestamp,
-                    lastLogin: timestamp
-                }).catch(err => {
-                    console.error("Database save error:", err);
-                });
+                try {
+                    await set(ref(db, `users/${user.uid}`), {
+                        email: user.email,
+                        uid: user.uid,
+                        createdAt: timestamp,
+                        lastLogin: timestamp
+                    });
+                } catch (dbErr) {
+                    console.error("Database save error:", dbErr);
+                    throw new Error("Account created, but Database write failed: " + dbErr.message);
+                }
 
             } else {
                 // SIGNIN
@@ -89,14 +92,17 @@ if (loginForm) {
 
                 // Save last login to realtime database using update()
                 const timestamp = new Date().toISOString();
-                await update(ref(db, `users/${user.uid}`), {
-                    lastLogin: timestamp
-                }).catch(err => {
-                    console.error("Database update error:", err);
-                });
+                try {
+                    await update(ref(db, `users/${user.uid}`), {
+                        lastLogin: timestamp
+                    });
+                } catch (dbErr) {
+                    console.error("Database update error:", dbErr);
+                    throw new Error("Logged in, but Database update failed: " + dbErr.message);
+                }
             }
 
-            // Redirect to main app
+            // Redirect to main app ONLY IF DATABASE WROTE SUCCESSFULLY
             window.location.href = "index.html";
 
         } catch (err) {

@@ -7,7 +7,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-    getDatabase, ref, push, get, query, orderByChild, equalTo
+    getDatabase, ref, set, update, get, query, orderByChild, equalTo
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // ── Firebase project config ──────────────────────────────────
@@ -54,29 +54,54 @@ window.handleLogin = async function (event) {
     loginBtn.textContent = "⏳ Signing in...";
 
     try {
-        // Save user to Firebase Realtime Database
-        const usersRef = ref(db, "users");
+        console.log("🔍 Checking user in Firebase...");
 
         // Check if phone already exists
+        const usersRef = ref(db, "users");
         const phoneQuery = query(usersRef, orderByChild("phone"), equalTo(phone));
         const snapshot = await get(phoneQuery);
 
+        const timestamp = new Date().toISOString();
+        const userId = "user_" + phone; // Use phone as unique identifier
+
         if (!snapshot.exists()) {
-            // New user — save to database
-            await push(usersRef, {
+            // New user — save to database with set()
+            console.log("📝 Saving new user...");
+            await set(ref(db, `users/${userId}`), {
                 name: name,
                 phone: phone,
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
+                createdAt: timestamp,
+                lastLogin: timestamp
+            }).catch((err) => {
+                console.error("❌ Error saving new user:", err.code, err.message);
+                throw err;
             });
-            console.log("✅ New user saved to Firebase:", name);
+            console.log("✅ New user saved to Firebase:", name, "- UID:", userId);
         } else {
-            console.log("👋 Existing user logged in:", name);
+            // Existing user — update lastLogin
+            console.log("👋 Existing user found - updating lastLogin...");
+            await update(ref(db, `users/${userId}`), {
+                lastLogin: timestamp
+            }).catch((err) => {
+                console.error("❌ Error updating lastLogin:", err.code, err.message);
+                throw err;
+            });
+            console.log("✅ Updated lastLogin for:", name);
         }
 
+        console.log("✨ Firebase database write completed successfully");
+
     } catch (err) {
-        // If Firebase fails, still let user in (localStorage will handle session)
-        console.warn("⚠️ Firebase save skipped:", err.message);
+        console.error("🔴 Firebase database error:", {
+            code: err.code,
+            message: err.message,
+            fullError: err
+        });
+        errorDiv.textContent = "Database error: " + err.message + ". Try again.";
+        errorDiv.style.display = "block";
+        loginBtn.disabled = false;
+        loginBtn.textContent = "🚀 Enter Analyso — It's Free";
+        return;
     }
 
     // Save session to localStorage (always, even if Firebase fails)

@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import time
 from flask import jsonify, request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from config import STOCKS, MODE_CONFIG
@@ -27,6 +28,10 @@ def load_win_rates():
     return None
 
 WIN_RATES_DATA = load_win_rates()
+
+# Request Cache to prevent duplicate downloads
+SCAN_CACHE = {}
+CACHE_TIMEOUT = 300  # 5 minutes
 
 # ================= HELPER FUNCTIONS =================
 
@@ -83,20 +88,29 @@ def register_routes(app):
         mode = request.json.get('mode')
         use_ai = request.json.get('use_ai', True)
 
+        # Check Cache
+        cache_key = f"{mode}_{use_ai}"
+        current_time = time.time()
+        if cache_key in SCAN_CACHE:
+            cached_result, timestamp = SCAN_CACHE[cache_key]
+            if current_time - timestamp < CACHE_TIMEOUT:
+                print(f"⚡ Returning cached scan result for mode {mode} (Age: {current_time - timestamp:.1f}s)")
+                return jsonify(cached_result)
+
         config = MODE_CONFIG.get(mode, MODE_CONFIG["INTRADAY"])
         period = config["period"]
         interval = config["interval"]
         min_data_points = config["min_data_points"]
 
         # ⚡ Safe serial download to save memory on 512MB RAM server
-        print(f"⚡ Downloading {len(STOCKS)} stocks (threading disabled to save memory)...")
+        print(f"⚡ Downloading {len(STOCKS)} stocks (threading enabled to speed up)...")
         data = yf.download(
             STOCKS,
             period=period,
             interval=interval,
             group_by='ticker',
             progress=False,
-            threads=False # Disabled threading to save RAM
+            threads=True # Enabled threading to speed up 494 stocks download
         )
 
         def process_stock(s):
@@ -153,10 +167,10 @@ def register_routes(app):
                 print(f"Error: {s} - {e}")
             return None
 
-        # ⚡ Process 2 stocks simultaneously to prevent Out-Of-Memory on Free Tier
+        # ⚡ Process 4 stocks simultaneously 
         results = []
-        print(f"⚡ Processing {len(STOCKS)} stocks with 2 parallel workers...")
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        print(f"⚡ Processing {len(STOCKS)} stocks with 4 parallel workers...")
+        with ThreadPoolExecutor(max_workers=4) as executor:
             futures = {executor.submit(process_stock, s): s for s in STOCKS}
             for future in as_completed(futures):
                 result = future.result()
@@ -171,11 +185,16 @@ def register_routes(app):
         if WIN_RATES_DATA and 'modes' in WIN_RATES_DATA:
             win_rate_info = WIN_RATES_DATA['modes'].get(mode_key)
 
-        return jsonify({
+        response_data = {
             "status": "success",
             "data": final,
             "win_rate": win_rate_info
-        })
+        }
+
+        # Save to Cache
+        SCAN_CACHE[cache_key] = (response_data, current_time)
+
+        return jsonify(response_data)
 
     @app.route('/get_stock_details', methods=['POST'])
     def details():

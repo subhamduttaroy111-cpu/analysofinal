@@ -1,14 +1,13 @@
 /**
- * firebase-config.js — Name + Phone Login
+ * firebase-config.js — Email + Password Login
  * ─────────────────────────────────────────
- * Saves user data to Firebase Realtime Database (free, no billing needed).
- * Uses localStorage for session tracking on the client side.
+ * Saves user data to Firebase Realtime Database.
+ * Uses Firebase Auth for secure session tracking.
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getDatabase, ref, set, update, get, query, orderByChild, equalTo
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getDatabase, ref, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // ── Firebase project config ──────────────────────────────────
 const firebaseConfig = {
@@ -22,132 +21,148 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
 
-// ── Login Handler ────────────────────────────────────────────
-window.handleLogin = async function (event) {
-    event.preventDefault();
+// ── UI Toggle Logic ──────────────────────────────────────────
+let isSignupMode = false;
+const toggleBtn = document.getElementById("toggleAuthMode");
+const authModeText = document.getElementById("authModeText");
+const loginBtn = document.getElementById("loginBtn");
 
-    const nameInput = document.getElementById("nameInput");
-    const phoneInput = document.getElementById("phoneInput");
-    const errorDiv = document.getElementById("loginError");
-    const loginBtn = document.getElementById("loginBtn");
-
-    const name = nameInput.value.trim();
-    const phone = phoneInput.value.trim();
-
-    // Validate
-    if (!name || name.length < 2) {
-        errorDiv.textContent = "Please enter a valid name (at least 2 characters).";
-        errorDiv.style.display = "block";
-        return;
-    }
-
-    if (!/^[0-9]{10}$/.test(phone)) {
-        errorDiv.textContent = "Please enter a valid 10-digit phone number.";
-        errorDiv.style.display = "block";
-        return;
-    }
-
-    errorDiv.style.display = "none";
-    loginBtn.disabled = true;
-    loginBtn.textContent = "⏳ Signing in...";
-
-    try {
-        console.log("🔍 Checking user in Firebase...");
-
-        // Check if phone already exists
-        const usersRef = ref(db, "users");
-        const phoneQuery = query(usersRef, orderByChild("phone"), equalTo(phone));
-        const snapshot = await get(phoneQuery);
-
-        const timestamp = new Date().toISOString();
-        const userId = "user_" + phone; // Use phone as unique identifier
-
-        if (!snapshot.exists()) {
-            // New user — save to database with set()
-            console.log("📝 Saving new user...");
-            await set(ref(db, `users/${userId}`), {
-                name: name,
-                phone: phone,
-                createdAt: timestamp,
-                lastLogin: timestamp
-            }).catch((err) => {
-                console.error("❌ Error saving new user:", err.code, err.message);
-                throw err;
-            });
-            console.log("✅ New user saved to Firebase:", name, "- UID:", userId);
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        isSignupMode = !isSignupMode;
+        if (isSignupMode) {
+            authModeText.textContent = "Already have an account?";
+            toggleBtn.textContent = "Sign in";
+            if (loginBtn) loginBtn.innerHTML = "🚀 Create Account";
         } else {
-            // Existing user — update lastLogin
-            console.log("👋 Existing user found - updating lastLogin...");
-            await update(ref(db, `users/${userId}`), {
-                lastLogin: timestamp
-            }).catch((err) => {
-                console.error("❌ Error updating lastLogin:", err.code, err.message);
-                throw err;
-            });
-            console.log("✅ Updated lastLogin for:", name);
+            authModeText.textContent = "Need an account?";
+            toggleBtn.textContent = "Create one";
+            if (loginBtn) loginBtn.innerHTML = "🚀 Sign In";
+        }
+    });
+}
+
+// ── Login / Signup Handler ───────────────────────────────────
+const loginForm = document.getElementById("loginForm");
+if (loginForm) {
+    loginForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const emailInput = document.getElementById("emailInput");
+        const passwordInput = document.getElementById("passwordInput");
+        const errorDiv = document.getElementById("loginError");
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (errorDiv) errorDiv.style.display = "none";
+        if (loginBtn) {
+            loginBtn.disabled = true;
+            loginBtn.textContent = "⏳ Processing...";
         }
 
-        console.log("✨ Firebase database write completed successfully");
+        try {
+            if (isSignupMode) {
+                // SIGNUP
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-    } catch (err) {
-        console.error("🔴 Firebase database error:", {
-            code: err.code,
-            message: err.message,
-            fullError: err
-        });
-        errorDiv.textContent = "Database error: " + err.message + ". Try again.";
-        errorDiv.style.display = "block";
-        loginBtn.disabled = false;
-        loginBtn.textContent = "🚀 Enter Analyso — It's Free";
-        return;
-    }
+                // Save to realtime database using set()
+                const timestamp = new Date().toISOString();
+                await set(ref(db, `users/${user.uid}`), {
+                    email: user.email,
+                    uid: user.uid,
+                    createdAt: timestamp,
+                    lastLogin: timestamp
+                }).catch(err => {
+                    console.error("Database save error:", err);
+                });
 
-    // Save session to localStorage (always, even if Firebase fails)
-    localStorage.setItem("analyso_user", JSON.stringify({
-        name: name,
-        phone: phone,
-        loggedInAt: new Date().toISOString()
-    }));
+            } else {
+                // SIGNIN
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-    // Redirect to main app
-    window.location.href = "index.html";
-};
+                // Save last login to realtime database using update()
+                const timestamp = new Date().toISOString();
+                await update(ref(db, `users/${user.uid}`), {
+                    lastLogin: timestamp
+                }).catch(err => {
+                    console.error("Database update error:", err);
+                });
+            }
 
-// ── Logout ───────────────────────────────────────────────────
-window.analysoLogout = function () {
-    localStorage.removeItem("analyso_user");
-    window.location.href = "login.html";
-};
+            // Redirect to main app
+            window.location.href = "index.html";
+
+        } catch (err) {
+            console.error("Auth error:", err);
+            let errMsg = err.message;
+            if (err.code === "auth/email-already-in-use") errMsg = "Email is already in use.";
+            if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") errMsg = "Incorrect email or password.";
+            if (err.code === "auth/user-not-found") errMsg = "No account found with this email.";
+
+            if (errorDiv) {
+                errorDiv.textContent = errMsg;
+                errorDiv.style.display = "block";
+            }
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = isSignupMode ? "🚀 Create Account" : "🚀 Sign In";
+            }
+        }
+    });
+}
 
 // ── Auth State Check (on page load) ─────────────────────────
-(function checkAuthState() {
+onAuthStateChanged(auth, (user) => {
     const path = window.location.pathname;
     const isLoginPage = path.includes("login.html") || path.includes("/login");
-    const user = localStorage.getItem("analyso_user");
 
     if (user) {
-        const userData = JSON.parse(user);
-
+        // User IS logged in
         if (isLoginPage) {
             window.location.href = "index.html";
             return;
         }
+
+        // Set local storage for backward compatibility with auth.js
+        const displayName = user.email.split('@')[0];
+        localStorage.setItem("analyso_user", JSON.stringify({
+            name: displayName,
+            email: user.email,
+            uid: user.uid
+        }));
 
         // Populate header profile on main page
         const userName = document.getElementById("userName");
         const userProfile = document.getElementById("userProfile");
         const userInitial = document.getElementById("userInitial");
 
-        if (userName) userName.textContent = userData.name;
-        if (userInitial) userInitial.textContent = userData.name.charAt(0).toUpperCase();
+        if (userName) userName.textContent = displayName;
+        if (userInitial) userInitial.textContent = displayName.charAt(0).toUpperCase();
         if (userProfile) userProfile.style.display = "flex";
 
         // Show educational disclaimer once per session
         if (typeof window.showDisclaimer === "function") window.showDisclaimer();
 
     } else {
+        // User is NOT logged in
+        localStorage.removeItem("analyso_user");
         if (!isLoginPage) window.location.href = "login.html";
     }
-})();
+});
+
+// ── Logout ───────────────────────────────────────────────────
+window.analysoLogout = function () {
+    signOut(auth).then(() => {
+        localStorage.removeItem("analyso_user");
+        window.location.href = "login.html";
+    }).catch((error) => {
+        console.error("Logout error", error);
+    });
+};

@@ -294,19 +294,24 @@
     </div>
 
     <!-- Login Form -->
-    <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+    <form class="login-form" id="loginForm">
       <div class="input-group">
-        <label for="nameInput">Your Name</label>
-        <input type="text" id="nameInput" placeholder="e.g. Rahul Sharma" required minlength="2" maxlength="50" autocomplete="name">
+        <label for="emailInput" id="emailLabel">Email Address</label>
+        <input type="email" id="emailInput" placeholder="e.g. trader@example.com" required autocomplete="email">
       </div>
       <div class="input-group">
-        <label for="phoneInput">Phone Number</label>
-        <input type="tel" id="phoneInput" placeholder="e.g. 9876543210" required pattern="[0-9]{10}" maxlength="10" autocomplete="tel">
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" placeholder="Min. 6 characters" required minlength="6" autocomplete="current-password">
       </div>
       <div class="login-error" id="loginError"></div>
       <button type="submit" class="login-submit-btn" id="loginBtn">
-        🚀 Enter Analyso — It's Free
+        🚀 Sign In
       </button>
+      
+      <div style="margin-top: 15px; text-align: center; font-size: 0.88rem; color: #475569;">
+        <span id="authModeText">Need an account?</span> 
+        <a href="#" id="toggleAuthMode" style="color: #6366f1; font-weight: 600; text-decoration: none;">Create one</a>
+      </div>
     </form>
 
     <!-- Educational disclaimer note -->

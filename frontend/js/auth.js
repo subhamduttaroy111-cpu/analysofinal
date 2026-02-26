@@ -14,8 +14,12 @@ const userInitial = document.getElementById("userInitial");
 // Logout Function
 if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("analyso_user");
-        window.location.href = "login.html";
+        if (typeof window.analysoLogout === 'function') {
+            window.analysoLogout();
+        } else {
+            localStorage.removeItem("analyso_user");
+            window.location.href = "login.html";
+        }
     });
 }
 

@@ -24,27 +24,37 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ── UI Toggle Logic ──────────────────────────────────────────
+// ── UI Toggle Logic (Segmented Tabs) ─────────────────────────
 let isSignupMode = false;
-const toggleBtn = document.getElementById("toggleAuthMode");
-const authModeText = document.getElementById("authModeText");
 const loginBtn = document.getElementById("loginBtn");
+const authTabs = document.getElementById("authTabs");
+const tabLogin = document.getElementById("tabLogin");
+const tabSignup = document.getElementById("tabSignup");
+const errorDiv = document.getElementById("loginError");
 
-if (toggleBtn) {
-    toggleBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        isSignupMode = !isSignupMode;
-        if (isSignupMode) {
-            authModeText.textContent = "Already have an account?";
-            toggleBtn.textContent = "Sign in";
-            if (loginBtn) loginBtn.innerHTML = "🚀 Create Account";
-        } else {
-            authModeText.textContent = "Need an account?";
-            toggleBtn.textContent = "Create one";
-            if (loginBtn) loginBtn.innerHTML = "🚀 Sign In";
-        }
-    });
-}
+window.setAuthMode = function (signupActive) {
+    isSignupMode = signupActive;
+
+    // Clear any previous errors when switching tabs
+    if (errorDiv) {
+        errorDiv.style.display = "none";
+        errorDiv.textContent = "";
+    }
+
+    if (isSignupMode) {
+        // Switch to Create Account mode
+        if (authTabs) authTabs.setAttribute("data-mode", "signup");
+        if (tabSignup) tabSignup.classList.add("active");
+        if (tabLogin) tabLogin.classList.remove("active");
+        if (loginBtn) loginBtn.innerHTML = "🚀 Create Account";
+    } else {
+        // Switch to Sign In mode
+        if (authTabs) authTabs.setAttribute("data-mode", "login");
+        if (tabLogin) tabLogin.classList.add("active");
+        if (tabSignup) tabSignup.classList.remove("active");
+        if (loginBtn) loginBtn.innerHTML = "🚀 Sign In";
+    }
+};
 
 // ── Login / Signup Handler ───────────────────────────────────
 const loginForm = document.getElementById("loginForm");

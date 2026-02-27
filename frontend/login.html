@@ -104,30 +104,50 @@
       font-size: 0.92rem;
     }
 
-    /* ── Features List ── */
-    .login-features {
+    /* ── Segmented Tab Toggle ── */
+    .auth-tabs {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 28px;
-      text-align: left;
+      background: #f1f5f9;
+      padding: 6px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      position: relative;
     }
 
-    .login-feature-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      background: #f8fafc;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      color: #334155;
-      font-weight: 500;
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
     }
 
-    .login-feature-item .fi-icon {
-      font-size: 1rem;
-      flex-shrink: 0;
+    .auth-tab.active {
+      color: #1e293b;
+    }
+
+    /* Sliding pill background */
+    .tab-slider {
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: 6px;
+      width: calc(50% - 6px);
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1;
+    }
+
+    .auth-tabs[data-mode="signup"] .tab-slider {
+      transform: translateX(100%);
     }
 
     /* ── Form Styles ── */
@@ -277,20 +297,11 @@
       <strong>NSE &amp; BSE</strong> — intraday, swing, and long-term picks.
     </p>
 
-    <!-- Features preview -->
-    <div class="login-features" aria-label="Platform features">
-      <div class="login-feature-item">
-        <span class="fi-icon">🚀</span>
-        <span>Intraday Scanner — Best NSE/BSE stocks today</span>
-      </div>
-      <div class="login-feature-item">
-        <span class="fi-icon">🌊</span>
-        <span>Swing Trading — Daily signals with targets &amp; SL</span>
-      </div>
-      <div class="login-feature-item">
-        <span class="fi-icon">💎</span>
-        <span>Long-Term Picks — Nifty 50 &amp; Midcap analysis</span>
-      </div>
+    <!-- Auth Tabs -->
+    <div class="auth-tabs" id="authTabs" data-mode="login">
+      <div class="tab-slider"></div>
+      <div class="auth-tab active" id="tabLogin" onclick="setAuthMode(false)">Sign In</div>
+      <div class="auth-tab" id="tabSignup" onclick="setAuthMode(true)">Create Account</div>
     </div>
 
     <!-- Login Form -->
@@ -308,10 +319,7 @@
         🚀 Sign In
       </button>
       
-      <div style="margin-top: 15px; text-align: center; font-size: 0.88rem; color: #475569;">
-        <span id="authModeText">Need an account?</span> 
-        <a href="#" id="toggleAuthMode" style="color: #6366f1; font-weight: 600; text-decoration: none;">Create one</a>
-      </div>
+        <!-- Removed old toggle text -->
     </form>
 
     <!-- Educational disclaimer note -->

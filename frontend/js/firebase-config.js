@@ -31,6 +31,7 @@ const authTabs = document.getElementById("authTabs");
 const tabLogin = document.getElementById("tabLogin");
 const tabSignup = document.getElementById("tabSignup");
 const errorDiv = document.getElementById("loginError");
+const phoneGroup = document.getElementById("phoneGroup"); // Added for phone number field
 
 window.setAuthMode = function (signupActive) {
     isSignupMode = signupActive;
@@ -47,12 +48,14 @@ window.setAuthMode = function (signupActive) {
         if (tabSignup) tabSignup.classList.add("active");
         if (tabLogin) tabLogin.classList.remove("active");
         if (loginBtn) loginBtn.innerHTML = "🚀 Create Account";
+        if (phoneGroup) phoneGroup.style.display = "block"; // Show phone field
     } else {
         // Switch to Sign In mode
         if (authTabs) authTabs.setAttribute("data-mode", "login");
         if (tabLogin) tabLogin.classList.add("active");
         if (tabSignup) tabSignup.classList.remove("active");
         if (loginBtn) loginBtn.innerHTML = "🚀 Sign In";
+        if (phoneGroup) phoneGroup.style.display = "none"; // Hide phone field
     }
 };
 
@@ -64,10 +67,12 @@ if (loginForm) {
 
         const emailInput = document.getElementById("emailInput");
         const passwordInput = document.getElementById("passwordInput");
+        const phoneInput = document.getElementById("phoneInput"); // Get phone input
         const errorDiv = document.getElementById("loginError");
 
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
+        const phone = phoneInput ? phoneInput.value.trim() : ""; // Extract phone
 
         if (errorDiv) errorDiv.style.display = "none";
         if (loginBtn) {
@@ -86,6 +91,7 @@ if (loginForm) {
                 try {
                     await setDoc(doc(db, "users", user.uid), {
                         email: user.email,
+                        phone: phone, // Save captured phone number
                         uid: user.uid,
                         createdAt: timestamp,
                         lastLogin: timestamp

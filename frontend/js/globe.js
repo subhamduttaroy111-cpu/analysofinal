@@ -8,11 +8,14 @@
 // ── Config ──────────────────────────────────────────────────
 const GLOBE_REFRESH_INTERVAL = 300000; // 5 minutes
 const INDIA_CENTER = { lat: 22.5, lng: 78.9, altitude: 2.0 };
+const RETRY_INTERVAL = 15000; // Retry every 15 seconds if API fails
 
 // ── State ───────────────────────────────────────────────────
 let globe = null;
 let globeData = null;
 let currentFilter = "all";
+let dataLoaded = false;
+let retryTimer = null;
 
 // ── Initialize Globe ────────────────────────────────────────
 function initGlobe() {
@@ -103,24 +106,57 @@ async function fetchSentimentData() {
             ? API_BASE
             : "https://analysofinal-backend.onrender.com";
 
+        if (!dataLoaded) {
+            showConnecting();
+        }
         console.log("🌍 Fetching:", backendUrl + "/api/sentiment-globe");
 
-        const res = await fetch(`${backendUrl}/api/sentiment-globe`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout
+
+        const res = await fetch(`${backendUrl}/api/sentiment-globe`, { signal: controller.signal });
+        clearTimeout(timeout);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         globeData = await res.json();
         if (globeData.error && typeof globeData.error === "string") throw new Error(globeData.error);
 
+        dataLoaded = true;
+        if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+
         updateGlobe(globeData);
         updateSentimentBar(globeData);
         updateCityPanel(globeData);
         updateNewsFeed(globeData);
-        hideLoader();
 
         console.log("✅ Loaded", globeData.total_headlines, "headlines");
     } catch (err) {
-        console.error("❌ Fetch error:", err);
-        showFallback();
+        console.error("❌ Fetch error:", err.message);
+        if (!dataLoaded) {
+            showConnecting();
+            // Start retry timer if not already running
+            if (!retryTimer) {
+                retryTimer = setInterval(fetchSentimentData, RETRY_INTERVAL);
+                console.log("🔄 Auto-retrying every 15 seconds...");
+            }
+        }
+    }
+}
+
+// ── Show "Connecting" status in news panel ───────────────────
+function showConnecting() {
+    const feed = document.getElementById("newsFeedList");
+    if (feed) {
+        feed.innerHTML = `
+            <div style="text-align:center; padding:30px 16px; color:#94a3b8; line-height:1.7;">
+                <div style="font-size:2rem; margin-bottom:12px; animation: spin 2s linear infinite;">🌍</div>
+                <strong style="font-size:0.9rem; color:#e2e8f0;">Connecting to server...</strong><br>
+                <span style="font-size:0.78rem; color:#64748b;">Render free tier is waking up.<br>This takes 1-2 minutes on first visit.</span>
+                <div style="margin-top:14px; padding:10px; background:rgba(99,102,241,0.06); border-radius:8px; font-size:0.72rem; color:#818cf8;">
+                    🔄 Auto-retrying every 15 seconds...
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -296,6 +332,18 @@ function setText(id, value) {
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🌍 Globe page loaded");
     initGlobe();
+
+    // Show globe immediately with fallback hubs (don't wait for API)
+    showFallback();
+
+    // Hide spinner after a short delay so user sees the globe right away
+    setTimeout(hideLoader, 1500);
+
+    // Start fetching data in the background
     fetchSentimentData();
-    setInterval(fetchSentimentData, GLOBE_REFRESH_INTERVAL);
+
+    // Auto-refresh every 5 minutes once data is loaded
+    setInterval(() => {
+        if (dataLoaded) fetchSentimentData();
+    }, GLOBE_REFRESH_INTERVAL);
 });

@@ -58,9 +58,13 @@ SECTOR_KEYWORDS = {
 
 # ── RSS Feed Sources ──────────────────────────────────────────
 RSS_FEEDS = [
+    # Indian Markets
     {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms", "source": "Economic Times"},
     {"url": "https://www.moneycontrol.com/rss/MCtopnews.xml", "source": "MoneyControl"},
     {"url": "https://www.livemint.com/rss/markets", "source": "Livemint"},
+    # Global Markets
+    {"url": "https://finance.yahoo.com/news/rss", "source": "Yahoo Fin US"},
+    {"url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "source": "CNBC Fin"},
 ]
 
 # ── In-memory cache (no database needed) ─────────────────────
@@ -76,7 +80,7 @@ def _fetch_rss_headlines():
     for feed_info in RSS_FEEDS:
         try:
             feed = feedparser.parse(feed_info["url"])
-            for entry in feed.entries[:8]:  # Top 8 per source
+            for entry in feed.entries[:6]:  # Top 6 per source to manage volume
                 title = entry.get("title", "").strip()
                 link = entry.get("link", "#")
                 pub_date = entry.get("published", "")
@@ -195,7 +199,7 @@ def get_globe_data():
                 hub_color = "#f59e0b"
         else:
             avg_score = 0
-            hub_color = "#64748b"
+            hub_color = "#64748b" # Dark gray for dormant hubs
 
         hubs.append({
             "name": name,

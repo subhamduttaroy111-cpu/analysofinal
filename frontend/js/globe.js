@@ -214,11 +214,13 @@ function updateUIComponents(data) {
 function updateGlobeLayer(data) {
     const points = data.hubs.map(h => ({ ...h }));
 
-    // Sources positioned globally to show lines flying into India
+    // Sources positioned globally to show lines flying into India and other hubs
     const sources = {
         "Economic Times": { lat: 15.0, lng: 55.0 }, // Arabian Sea
         "MoneyControl":   { lat: 10.0, lng: 90.0 }, // Bay of Bengal
         "Livemint":       { lat: 35.0, lng: 70.0 }, // North West Land
+        "Yahoo Fin US":   { lat: 38.0, lng: -97.0 }, // North America
+        "CNBC Fin":       { lat: 45.0, lng: -10.0 }, // North Atlantic
     };
 
     const arcs = data.news_points.map(np => {

@@ -202,8 +202,8 @@ function updateUIComponents(data) {
     const dt = new Date(data.timestamp);
     setText("statTime", `TIME: ${dt.toLocaleTimeString("en-IN", { hour12: false })} IST`);
 
-    // 3. Risk Panel Layer
-    updateRiskPanel(data);
+    // 3. Sector Panel
+    updateSectorPanel(data);
     updateSectorPanel(data);
 
     // 4. Intelligence Feed Layer
@@ -254,33 +254,44 @@ function updateGlobeLayer(data) {
     globe.ringsData(rings);
 }
 
-// ── Risk Component ──────────────────────────────────────────
-function updateRiskPanel(data) {
-    const list = document.getElementById("cityList");
+// ── Market Indices Component ──────────────────────────────────
+async function fetchAndDisplayMarketIndices() {
+    const list = document.getElementById("marketIndicesList");
     if (!list) return;
 
-    // Hard sort: High risk (Bearish/Lowest score) at the very top
-    const sorted = [...data.hubs].sort((a, b) => a.avg_sentiment - b.avg_sentiment);
+    try {
+        const backendUrl = (typeof API_BASE !== "undefined" && API_BASE)
+            ? API_BASE
+            : "https://analysofinal-backend.onrender.com";
 
-    list.innerHTML = sorted.map(hub => {
-        const hex = getTerminalColorCode(hub.avg_sentiment, hub.news_count);
-        const lbl = getTerminalLabel(hub.avg_sentiment, hub.news_count);
+        const res = await fetch(`${backendUrl}/api/market-indices`);
+        if (!res.ok) throw new Error("Indices fetch failed");
+        const json = await res.json();
         
-        // Intensity meter calculation
-        const intensity = Math.min((hub.news_count / 15) * 100, 100);
-
-        return `
-            <div class="risk-row">
-                <div class="risk-cell risk-col-city">${hub.name.toUpperCase()}</div>
-                <div class="risk-cell risk-col-score" style="color:${hex}">${lbl}</div>
-                <div class="risk-cell risk-col-meter">
-                    <div class="meter-bg">
-                        <div class="meter-fill" style="width:${intensity}%; background:${hex};"></div>
+        if (json.status === "success" && json.data.length > 0) {
+            list.innerHTML = json.data.map(idx => {
+                const isBullish = idx.change >= 0;
+                const hex = isBullish ? "#10b981" : "#ef4444"; // match new theme css var manually
+                const sign = isBullish ? "+" : "";
+                
+                return `
+                    <div class="risk-row" style="justify-content: space-between; padding-right: 16px;">
+                        <div class="risk-cell risk-col-city">${idx.name}</div>
+                        <div class="risk-cell" style="font-weight: 700; font-family: var(--font-mono);">${idx.price.toFixed(2)}</div>
+                        <div class="risk-cell" style="color:${hex}; font-weight: 700; font-size: 0.75rem; text-align: right; width: 80px;">
+                            ${sign}${idx.change.toFixed(2)}<br>
+                            (${sign}${idx.change_pct.toFixed(2)}%)
+                        </div>
                     </div>
-                </div>
-            </div>
-        `;
-    }).join("");
+                `;
+            }).join("");
+        } else {
+            list.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--signal-bearish); font-size: 0.8rem;">DATA UNAVAILABLE</div>`;
+        }
+    } catch (err) {
+        console.error("Market Indices Error:", err);
+        list.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--signal-bearish); font-size: 0.8rem;">CONNECTION ERROR</div>`;
+    }
 }
 
 function updateSectorPanel(data) {
@@ -371,5 +382,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(hideLoader, 500);
     
     fetchSentimentData();
-    setInterval(() => { if (dataLoaded) fetchSentimentData(); }, GLOBE_REFRESH_INTERVAL);
+    fetchAndDisplayMarketIndices();
+    
+    setInterval(() => { 
+        if (dataLoaded) fetchSentimentData(); 
+        fetchAndDisplayMarketIndices();
+    }, GLOBE_REFRESH_INTERVAL);
 });

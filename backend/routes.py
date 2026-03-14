@@ -249,3 +249,44 @@ def register_routes(app):
         except Exception as e:
             print(f"⚠️ Sentiment Globe error: {e}")
             return jsonify({"error": str(e), "hubs": [], "news_points": [], "summary": {}}), 500
+
+    @app.route('/api/market-indices', methods=['GET'])
+    def market_indices():
+        """Fetch live prices for Nifty, Sensex, and BankNifty"""
+        indices = {
+            "NIFTY 50": "^NSEI",
+            "SENSEX": "^BSESN",
+            "BANKNIFTY": "^NSEBANK"
+        }
+        results = []
+        try:
+            for name, symbol in indices.items():
+                ticker = yf.Ticker(symbol)
+                todays_data = ticker.history(period='1d')
+                if not todays_data.empty:
+                    current_price = todays_data['Close'].iloc[0] # or -1
+                    # To be safer with just 1d data:
+                    current_price = todays_data['Close'].iloc[-1]
+                    prev_close = ticker.info.get('previousClose', current_price)
+                    
+                    # Sometimes fast history doesn't quickly get previousClose from info
+                    # Let's use 5d history to ensure we have the previous close robustly
+                    hist = ticker.history(period='5d')
+                    if len(hist) > 1:
+                        current_price = hist['Close'].iloc[-1]
+                        prev_close = hist['Close'].iloc[-2]
+                        
+                    change = current_price - prev_close
+                    change_pct = (change / prev_close) * 100 if prev_close else 0
+                    
+                    results.append({
+                        "name": name,
+                        "price": round(current_price, 2),
+                        "change": round(change, 2),
+                        "change_pct": round(change_pct, 2),
+                        "status": "BULLISH" if change >= 0 else "BEARISH"
+                    })
+            return jsonify({"status": "success", "data": results})
+        except Exception as e:
+            print(f"Error fetching indices: {e}")
+            return jsonify({"status": "error", "message": str(e)}), 500

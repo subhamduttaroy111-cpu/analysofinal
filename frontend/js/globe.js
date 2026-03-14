@@ -144,18 +144,10 @@ function showLoaderStatus() {
 function showFallback() {
     hideLoader();
 
-    const hubs = [
-        { name: "Mumbai", lat: 19.076, lng: 72.878, color: "#374151", news_count: 0, avg_sentiment: 0 },
-        { name: "Delhi", lat: 28.614, lng: 77.209, color: "#374151", news_count: 0, avg_sentiment: 0 },
-        { name: "Bengaluru", lat: 12.972, lng: 77.595, color: "#374151", news_count: 0, avg_sentiment: 0 },
-        { name: "Chennai", lat: 13.083, lng: 80.271, color: "#374151", news_count: 0, avg_sentiment: 0 },
-        { name: "Hyderabad", lat: 17.385, lng: 78.487, color: "#374151", news_count: 0, avg_sentiment: 0 },
-        { name: "Kolkata", lat: 22.573, lng: 88.364, color: "#374151", news_count: 0, avg_sentiment: 0 },
-    ];
-
     if (globe) {
-        globe.pointsData(hubs);
-        globe.labelsData(hubs.map(h => ({ lat: h.lat, lng: h.lng, labelText: h.name })));
+        // Initial empty state until fetch completes
+        globe.pointsData([]);
+        globe.labelsData([]);
     }
 }
 

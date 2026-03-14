@@ -22,8 +22,9 @@ function initGlobe() {
 
     try {
         globe = Globe()(container)
-            // Stark mapping — removing typical blue marble for a darker satellite feel
-            .globeImageUrl("//unpkg.com/three-globe/example/img/earth-dark.jpg")
+            // High contrast visible earth instead of pure darkness
+            .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+            .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
             .backgroundImageUrl("//unpkg.com/three-globe/example/img/night-sky.png")
             .showAtmosphere(true)
             .atmosphereColor("#1F2937") // Hard terminal gray ring

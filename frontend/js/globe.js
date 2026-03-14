@@ -1,14 +1,12 @@
 /**
- * globe.js — 3D News Sentiment Globe (REDESIGNED)
- * ═══════════════════════════════════════════════════
- * Clearer, more intuitive UI showing exactly where
- * good/bad news is coming from in Indian markets.
+ * globe.js — Terminal V2 Logic
+ * Aesthetics: Dense, Monospace, High-Contrast Red/Green
  */
 
 // ── Config ──────────────────────────────────────────────────
 const GLOBE_REFRESH_INTERVAL = 300000; // 5 minutes
-const INDIA_CENTER = { lat: 22.5, lng: 78.9, altitude: 2.0 };
-const RETRY_INTERVAL = 15000; // Retry every 15 seconds if API fails
+const INDIA_CENTER = { lat: 21.0, lng: 78.9, altitude: 2.2 };
+const RETRY_INTERVAL = 15000; 
 
 // ── State ───────────────────────────────────────────────────
 let globe = null;
@@ -24,79 +22,130 @@ function initGlobe() {
 
     try {
         globe = Globe()(container)
-            .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
-            .bumpImageUrl("https://unpkg.com/three-globe/example/img/earth-topology.png")
+            // Stark mapping — removing typical blue marble for a darker satellite feel
+            .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-water-png.png")
             .backgroundImageUrl("https://unpkg.com/three-globe/example/img/night-sky.png")
             .showAtmosphere(true)
-            .atmosphereColor("rgba(99, 102, 241, 0.25)")
-            .atmosphereAltitude(0.2)
+            .atmosphereColor("#1F2937") // Hard terminal gray ring
+            .atmosphereAltitude(0.15)
+            .backgroundColor("#02040A")
 
-            // Hub Points (larger, clearer)
+            // Hub Points (sharp terminal dots)
             .pointsData([])
             .pointLat("lat")
             .pointLng("lng")
-            .pointColor("color")
-            .pointAltitude(d => 0.01 + d.intensity * 0.03)
-            .pointRadius(d => 0.25 + d.intensity * 0.15)
-            .pointLabel(d => {
-                const mood = d.avg_sentiment >= 0.1 ? "📈 Bullish" : d.avg_sentiment <= -0.1 ? "📉 Bearish" : "➡️ Neutral";
-                return `
-                    <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px 18px;color:#e2e8f0;font-family:Inter,sans-serif;font-size:0.82rem;max-width:260px;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-                        <div style="font-weight:800;font-size:0.95rem;margin-bottom:6px;">${d.name}</div>
-                        <div style="color:${d.color};font-weight:700;margin-bottom:4px;">${mood}</div>
-                        <div style="color:#94a3b8;font-size:0.75rem;">${d.news_count} headlines • Score: ${d.avg_sentiment > 0 ? '+' : ''}${d.avg_sentiment}</div>
-                    </div>
-                `;
-            })
+            .pointColor(d => getTerminalColorCode(d.avg_sentiment, d.news_count))
+            .pointAltitude(0.01)
+            .pointRadius(d => 0.4 + (d.news_count * 0.1))
+            .pointLabel(d => `
+                <div style="background:#090E17;border:1px solid #1F2937;padding:8px;font-family:'Roboto Mono',monospace;font-size:0.7rem;color:#E2E8F0;">
+                    <div style="color:#FFF;font-weight:700;margin-bottom:4px;border-bottom:1px solid #1F2937;padding-bottom:2px;">[ ${d.name.toUpperCase()} ]</div>
+                    <div>VOL: ${d.news_count} SCANS</div>
+                    <div>SCR: <span style="color:${getTerminalColorCode(d.avg_sentiment, d.news_count)}">${d.avg_sentiment}</span></div>
+                </div>
+            `)
 
-            // Arcs (news flow)
+            // Arcs (news flow) - High contrast laser lines
             .arcsData([])
             .arcStartLat("startLat")
             .arcStartLng("startLng")
             .arcEndLat("endLat")
             .arcEndLng("endLng")
             .arcColor("colors")
-            .arcAltitude(0.12)
-            .arcStroke(0.6)
-            .arcDashLength(0.5)
-            .arcDashGap(0.25)
-            .arcDashAnimateTime(1800)
+            .arcAltitude(0.15)
+            .arcStroke(0.8)
+            .arcDashLength(0.4)
+            .arcDashGap(0.2)
+            .arcDashAnimateTime(1500)
 
-            // City Labels
+            // City Labels (Monospaced)
             .labelsData([])
             .labelLat("lat")
             .labelLng("lng")
             .labelText("labelText")
-            .labelSize(1.6)
-            .labelDotRadius(0.5)
-            .labelColor(d => d.color || "rgba(165, 180, 252, 0.85)")
-            .labelResolution(2);
+            .labelSize(1.5)
+            .labelDotRadius(0.3)
+            .labelColor(() => "#6B7280")
+            .labelResolution(3);
 
         globe.controls().autoRotate = true;
-        globe.controls().autoRotateSpeed = 0.35;
+        globe.controls().autoRotateSpeed = 0.5;
         globe.controls().enableDamping = true;
         globe.controls().dampingFactor = 0.1;
 
+        // Custom lighting for terminal look (less diffuse)
+        if (globe.scene && globe.scene()) {
+            const ambientLight = globe.scene().children.find(o => o.type === 'AmbientLight');
+            if (ambientLight) ambientLight.intensity = 0.4;
+        }
+
         setTimeout(() => {
             globe.pointOfView(INDIA_CENTER, 1500);
-        }, 500);
+        }, 300);
 
         window.addEventListener("resize", () => {
             globe.width(window.innerWidth);
             globe.height(window.innerHeight);
         });
 
-        console.log("✅ Globe initialized");
     } catch (err) {
-        console.error("❌ Globe init error:", err);
+        console.error("SYS ERR: GLOBE INIT", err);
         hideLoader();
     }
 }
 
-// ── Hide Loader ─────────────────────────────────────────────
+// Map sentiment float to hard terminal color hex
+function getTerminalColorCode(score, count) {
+    if (count === 0) return "#374151"; // Inactive
+    if (score <= -0.1) return "#FF2A2A"; // Bearish (Red)
+    if (score >= 0.1) return "#00FF55"; // Bullish (Green)
+    return "#AAAAAA"; // Neutral (Gray)
+}
+
+function getTerminalLabel(score, count) {
+    if (count === 0) return "N/A    ";
+    if (score <= -0.1) return "BEARISH";
+    if (score >= 0.1) return "BULLISH";
+    return "NEUTRAL";
+}
+
+// ── Loader / Fallback ───────────────────────────────────────
 function hideLoader() {
     const el = document.getElementById("globeLoading");
     if (el) el.classList.add("hidden");
+}
+
+function showLoaderStatus() {
+    const feed = document.getElementById("newsFeedList");
+    if (feed) {
+        feed.innerHTML = `
+            <div style="padding:15px; font-family:'Roboto Mono',monospace; font-size:0.75rem; color:#6B7280; line-height:1.6;">
+                <div style="color:#3B82F6">> SYS.CONNECTING [API_BASE]</div>
+                <div>> AWAITING HANDSHAKE...</div>
+                <div style="color:#FF2A2A; margin-top:8px;">> WARN: RENDER COLD START DETECTED</div>
+                <div>> ESTIMATED WAKE TTL: 60s</div>
+                <div>> RETRY LOOP ENGAGED [15000ms] <span class="loader-cursor" style="display:inline-block;width:6px;height:10px;background:#3B82F6;"></span></div>
+            </div>
+        `;
+    }
+}
+
+function showFallback() {
+    hideLoader();
+
+    const hubs = [
+        { name: "Mumbai", lat: 19.076, lng: 72.878, color: "#374151", news_count: 0, avg_sentiment: 0 },
+        { name: "Delhi", lat: 28.614, lng: 77.209, color: "#374151", news_count: 0, avg_sentiment: 0 },
+        { name: "Bengaluru", lat: 12.972, lng: 77.595, color: "#374151", news_count: 0, avg_sentiment: 0 },
+        { name: "Chennai", lat: 13.083, lng: 80.271, color: "#374151", news_count: 0, avg_sentiment: 0 },
+        { name: "Hyderabad", lat: 17.385, lng: 78.487, color: "#374151", news_count: 0, avg_sentiment: 0 },
+        { name: "Kolkata", lat: 22.573, lng: 88.364, color: "#374151", news_count: 0, avg_sentiment: 0 },
+    ];
+
+    if (globe) {
+        globe.pointsData(hubs);
+        globe.labelsData(hubs.map(h => ({ lat: h.lat, lng: h.lng, labelText: h.name })));
+    }
 }
 
 // ── Fetch Sentiment Data ────────────────────────────────────
@@ -106,95 +155,85 @@ async function fetchSentimentData() {
             ? API_BASE
             : "https://analysofinal-backend.onrender.com";
 
-        if (!dataLoaded) {
-            showConnecting();
-        }
-        console.log("🌍 Fetching:", backendUrl + "/api/sentiment-globe");
+        if (!dataLoaded) showLoaderStatus();
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout
+        const timeout = setTimeout(() => controller.abort(), 45000);
 
         const res = await fetch(`${backendUrl}/api/sentiment-globe`, { signal: controller.signal });
         clearTimeout(timeout);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP_ERR_${res.status}`);
 
         globeData = await res.json();
-        if (globeData.error && typeof globeData.error === "string") throw new Error(globeData.error);
+        if (globeData.error) throw new Error(globeData.error);
 
         dataLoaded = true;
         if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
 
-        updateGlobe(globeData);
-        updateSentimentBar(globeData);
-        updateCityPanel(globeData);
-        updateNewsFeed(globeData);
+        updateUIComponents(globeData);
+        hideLoader();
 
-        console.log("✅ Loaded", globeData.total_headlines, "headlines");
     } catch (err) {
-        console.error("❌ Fetch error:", err.message);
+        console.error("SYS ERR: FETCH_FAIL", err.message);
         if (!dataLoaded) {
-            showConnecting();
-            // Start retry timer if not already running
+            showLoaderStatus();
             if (!retryTimer) {
                 retryTimer = setInterval(fetchSentimentData, RETRY_INTERVAL);
-                console.log("🔄 Auto-retrying every 15 seconds...");
             }
         }
     }
 }
 
-// ── Show "Connecting" status in news panel ───────────────────
-function showConnecting() {
-    const feed = document.getElementById("newsFeedList");
-    if (feed) {
-        feed.innerHTML = `
-            <div style="text-align:center; padding:30px 16px; color:#94a3b8; line-height:1.7;">
-                <div style="font-size:2rem; margin-bottom:12px; animation: spin 2s linear infinite;">🌍</div>
-                <strong style="font-size:0.9rem; color:#e2e8f0;">Connecting to server...</strong><br>
-                <span style="font-size:0.78rem; color:#64748b;">Render free tier is waking up.<br>This takes 1-2 minutes on first visit.</span>
-                <div style="margin-top:14px; padding:10px; background:rgba(99,102,241,0.06); border-radius:8px; font-size:0.72rem; color:#818cf8;">
-                    🔄 Auto-retrying every 15 seconds...
-                </div>
-            </div>
-        `;
-    }
-}
-
-// ── Update Globe ────────────────────────────────────────────
-function updateGlobe(data) {
+// ── Core UI Updates ─────────────────────────────────────────
+function updateUIComponents(data) {
     if (!globe || !data) return;
 
-    // Hub city points
-    const points = data.hubs.map(h => ({
-        ...h,
-        intensity: Math.min(h.news_count, 10),
-    }));
+    // 1. Globe Layer
+    updateGlobeLayer(data);
 
-    // Create arcs from each news point to its assigned city
-    // Use different source coordinates based on news source for visual variety
-    const sourceCoords = {
-        "Economic Times": { lat: 19.076, lng: 65.0 },  // West of Mumbai
-        "MoneyControl":   { lat: 25.0, lng: 68.0 },     // NW India
-        "Livemint":       { lat: 15.0, lng: 66.0 },     // SW coast
+    // 2. Status Bar Layer
+    setText("statTotal", data.total_headlines || 0);
+    setText("statBullish", data.summary.bullish || 0);
+    setText("statBearish", data.summary.bearish || 0);
+    setText("statNeutral", data.summary.neutral || 0);
+    
+    const dt = new Date(data.timestamp);
+    setText("statTime", `TIME: ${dt.toLocaleTimeString("en-IN", { hour12: false })} IST`);
+
+    // 3. Risk Panel Layer
+    updateRiskPanel(data);
+
+    // 4. Intelligence Feed Layer
+    updateNewsFeed(data);
+}
+
+function updateGlobeLayer(data) {
+    const points = data.hubs.map(h => ({ ...h }));
+
+    // Sources positioned globally to show lines flying into India
+    const sources = {
+        "Economic Times": { lat: 15.0, lng: 55.0 }, // Arabian Sea
+        "MoneyControl":   { lat: 10.0, lng: 90.0 }, // Bay of Bengal
+        "Livemint":       { lat: 35.0, lng: 70.0 }, // North West Land
     };
 
     const arcs = data.news_points.map(np => {
-        const src = sourceCoords[np.source] || { lat: 10.0, lng: 60.0 };
+        const src = sources[np.source] || { lat: 0.0, lng: 75.0 };
+        const hColor = getTerminalColorCode(np.sentiment.score, 1);
+        
         return {
-            startLat: src.lat + (Math.random() - 0.5) * 3,
-            startLng: src.lng + (Math.random() - 0.5) * 3,
+            startLat: src.lat + (Math.random() - 0.5) * 5,
+            startLng: src.lng + (Math.random() - 0.5) * 5,
             endLat: np.lat,
             endLng: np.lng,
-            colors: [np.sentiment.color + "88", np.sentiment.color],
+            colors: [hColor + "55", hColor], // Fade in source to destination
         };
     });
 
-    // Labels with emoji indicators
     const labels = data.hubs.map(h => ({
         lat: h.lat,
         lng: h.lng,
-        labelText: h.name,
-        color: h.color,
+        labelText: h.name
     }));
 
     globe.pointsData(points);
@@ -202,123 +241,75 @@ function updateGlobe(data) {
     globe.labelsData(labels);
 }
 
-// ── Update Sentiment Bar ────────────────────────────────────
-function updateSentimentBar(data) {
-    setText("barBullish", data.summary.bullish || 0);
-    setText("barBearish", data.summary.bearish || 0);
-    setText("barNeutral", data.summary.neutral || 0);
-    setText("barTotal", data.total_headlines || 0);
-}
+// ── Risk Component ──────────────────────────────────────────
+function updateRiskPanel(data) {
+    const list = document.getElementById("cityList");
+    if (!list) return;
 
-// ── Update City Panel ───────────────────────────────────────
-function updateCityPanel(data) {
-    const container = document.getElementById("cityList");
-    if (!container) return;
-
-    // Sort: most bearish cities first so user sees "where bad news comes from" at top
+    // Hard sort: High risk (Bearish/Lowest score) at the very top
     const sorted = [...data.hubs].sort((a, b) => a.avg_sentiment - b.avg_sentiment);
 
-    container.innerHTML = sorted.map(hub => {
-        let sentLabel, sentClass;
-        if (hub.avg_sentiment >= 0.1) { sentLabel = "Bullish"; sentClass = "bullish"; }
-        else if (hub.avg_sentiment <= -0.1) { sentLabel = "Bearish"; sentClass = "bearish"; }
-        else if (hub.news_count === 0) { sentLabel = "No Data"; sentClass = "inactive"; }
-        else { sentLabel = "Neutral"; sentClass = "neutral"; }
+    list.innerHTML = sorted.map(hub => {
+        const hex = getTerminalColorCode(hub.avg_sentiment, hub.news_count);
+        const lbl = getTerminalLabel(hub.avg_sentiment, hub.news_count);
+        
+        // Intensity meter calculation
+        const intensity = Math.min((hub.news_count / 15) * 100, 100);
 
         return `
-            <div class="city-row">
-                <span class="city-indicator" style="background:${hub.color}; box-shadow: 0 0 6px ${hub.color}50;"></span>
-                <span class="city-name">${hub.name}</span>
-                <span class="city-sentiment-tag ${sentClass}">${sentLabel}</span>
-                <span class="city-count">${hub.news_count}</span>
+            <div class="risk-row">
+                <div class="risk-cell risk-col-city">${hub.name.toUpperCase()}</div>
+                <div class="risk-cell risk-col-score" style="color:${hex}">${lbl}</div>
+                <div class="risk-cell risk-col-meter">
+                    <div class="meter-bg">
+                        <div class="meter-fill" style="width:${intensity}%; background:${hex};"></div>
+                    </div>
+                </div>
             </div>
         `;
     }).join("");
 }
 
-// ── Update News Feed ────────────────────────────────────────
+// ── Intelligence Component ──────────────────────────────────
 function updateNewsFeed(data) {
     if (!data || !data.news_points) return;
-    renderNewsItems(data.news_points, currentFilter);
+    renderFeedItems(data.news_points, currentFilter);
 }
 
-function renderNewsItems(newsPoints, filter) {
-    const container = document.getElementById("newsFeedList");
-    if (!container) return;
+function renderFeedItems(news, filter) {
+    const list = document.getElementById("newsFeedList");
+    if (!list) return;
 
-    const filtered = filter === "all"
-        ? newsPoints
-        : newsPoints.filter(np => np.sentiment.label.toLowerCase() === filter);
+    const filtered = filter === "all" ? news : news.filter(n => n.sentiment.label.toLowerCase() === filter);
 
     if (filtered.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:24px; color:#64748b; font-size:0.82rem;">
-            No ${filter} news at the moment.
-        </div>`;
+        list.innerHTML = `<div style="padding:15px;font-family:'Roboto Mono',monospace;color:#6B7280;font-size:0.75rem;">> NO MATCHING SIGNALS IN BUFFER.</div>`;
         return;
     }
 
-    container.innerHTML = filtered.slice(0, 15).map(np => {
-        const sentClass = np.sentiment.label.toLowerCase();
-        const scoreClass = np.sentiment.score > 0 ? "positive" : np.sentiment.score < 0 ? "negative" : "neutral-score";
-        const scoreText = np.sentiment.score > 0 ? `+${np.sentiment.score}` : `${np.sentiment.score}`;
-
+    list.innerHTML = filtered.slice(0, 50).map(n => {
+        const tag = n.sentiment.label.toUpperCase();
         return `
-            <a href="${np.link}" target="_blank" rel="noopener" class="news-feed-item ${sentClass}-item">
-                <div class="news-item-top">
-                    <span class="sentiment-badge ${sentClass}">${np.sentiment.label}</span>
-                    <span class="news-city-tag">📍 ${np.city}</span>
+            <a href="${n.link}" target="_blank" rel="noopener" class="ticker-item">
+                <div class="ticker-meta">
+                    <span class="ticker-time">[NEW]</span>
+                    <span class="ticker-sentiment ${tag}">${tag}</span>
+                    <span class="ticker-source">${n.source.toUpperCase().substr(0,10)}</span>
+                    <span class="ticker-city">&lt;${n.city.substring(0,3).toUpperCase()}&gt;</span>
                 </div>
-                <div class="news-item-title">${np.title}</div>
-                <div class="news-item-footer">
-                    <span class="news-source">📡 ${np.source}</span>
-                    <span class="news-score ${scoreClass}">${scoreText}</span>
-                </div>
+                <div class="ticker-headline">${n.title}</div>
             </a>
         `;
     }).join("");
 }
 
-// ── Tab Filter ──────────────────────────────────────────────
-function filterNews(filter, tabEl) {
+// Filter Action
+function filterNews(filter, btn) {
     currentFilter = filter;
-
-    // Update active tab
-    document.querySelectorAll(".feed-tab").forEach(t => t.classList.remove("active"));
-    if (tabEl) tabEl.classList.add("active");
-
-    // Re-render with filter
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
     if (globeData && globeData.news_points) {
-        renderNewsItems(globeData.news_points, filter);
-    }
-}
-
-// ── Fallback ────────────────────────────────────────────────
-function showFallback() {
-    hideLoader();
-
-    const fallbackHubs = [
-        { name: "Mumbai", lat: 19.076, lng: 72.878, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
-        { name: "Delhi", lat: 28.614, lng: 77.209, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
-        { name: "Bengaluru", lat: 12.972, lng: 77.595, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
-        { name: "Chennai", lat: 13.083, lng: 80.271, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
-        { name: "Hyderabad", lat: 17.385, lng: 78.487, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
-        { name: "Kolkata", lat: 22.573, lng: 88.364, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
-    ];
-
-    if (globe) {
-        globe.pointsData(fallbackHubs);
-        globe.labelsData(fallbackHubs.map(h => ({ lat: h.lat, lng: h.lng, labelText: h.name, color: h.color })));
-    }
-
-    const feed = document.getElementById("newsFeedList");
-    if (feed) {
-        feed.innerHTML = `
-            <div style="text-align:center; padding:24px; color:#94a3b8; font-size: 0.82rem; line-height:1.6;">
-                <div style="font-size:1.5rem; margin-bottom:10px;">⏳</div>
-                <strong>Waking up the server...</strong><br>
-                <span style="color:#64748b; font-size:0.75rem;">First load may take 1-2 minutes on Render free tier.<br>The page will auto-refresh.</span>
-            </div>
-        `;
+        renderFeedItems(globeData.news_points, filter);
     }
 }
 
@@ -330,20 +321,12 @@ function setText(id, value) {
 
 // ── Boot ─────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🌍 Globe page loaded");
     initGlobe();
-
-    // Show globe immediately with fallback hubs (don't wait for API)
     showFallback();
-
-    // Hide spinner after a short delay so user sees the globe right away
-    setTimeout(hideLoader, 1500);
-
-    // Start fetching data in the background
+    
+    // Quick blink loader off, switch to panel loader
+    setTimeout(hideLoader, 500);
+    
     fetchSentimentData();
-
-    // Auto-refresh every 5 minutes once data is loaded
-    setInterval(() => {
-        if (dataLoaded) fetchSentimentData();
-    }, GLOBE_REFRESH_INTERVAL);
+    setInterval(() => { if (dataLoaded) fetchSentimentData(); }, GLOBE_REFRESH_INTERVAL);
 });

@@ -5,28 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- SEO -->
-  <title>3D News Sentiment Globe | Analyso – Indian Stock Market</title>
-  <meta name="description" content="Real-time 3D visualization of Indian financial news sentiment. See live market mood across Mumbai, Delhi, Bengaluru and more financial hubs powered by AI.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://www.analyso.online/globe.html">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="https://www.analyso.online/logo.png">
-  <link rel="apple-touch-icon" href="https://www.analyso.online/logo.png">
-  <meta name="theme-color" content="#020617">
-
-  <!-- Open Graph -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="3D News Sentiment Globe | Analyso">
-  <meta property="og:description" content="Real-time 3D globe showing Indian stock market news sentiment across major financial hubs.">
-  <meta property="og:site_name" content="Analyso">
+  <title>Global Risk Terminal | Analyso</title>
+  <meta name="description" content="Institutional Indian market news sentiment terminal.">
+  <meta name="robots" content="index, nofollow">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <!-- Globe.gl via CDN (jsdelivr — reliable) -->
+  <!-- Globe.gl via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
 
   <!-- Styles -->
@@ -35,80 +23,63 @@
 
 <body>
 
-<!-- ═══════════ LOADING SCREEN ═══════════ -->
-<div id="globeLoading" class="globe-loading">
-    <div class="globe-loading-spinner"></div>
-    <p class="globe-loading-text">Scanning global news sentiment...</p>
-</div>
-
-<!-- ═══════════ HEADER ═══════════ -->
-<header class="globe-header">
-    <div class="globe-header-left">
-        <a href="index.html" class="back-btn">← Back to Scanner</a>
-        <div>
-            <div class="globe-title">🌍 News Sentiment Globe</div>
-            <div class="globe-subtitle">Real-Time Indian Market Mood</div>
-        </div>
+<!-- ═══════════ COMMAND / TOP BAR ═══════════ -->
+<header class="command-bar terminal-panel">
+    <div style="display:flex; align-items:center; gap:20px;">
+        <span class="sys-title">ANALYSO // GLOBAL RISK TIE // IND-EQUITY</span>
+        <a href="index.html" class="cmd-btn">[ESC] BACK TO SCANNER</a>
     </div>
-    <div class="header-right">
-        <div class="live-badge">
-            <span class="live-dot"></span>
-            LIVE
+    
+    <div style="display:flex; align-items:center; gap:16px;">
+        <div class="status-indicator">
+            <span class="status-dot"></span>
+            SYS: ONLINE
         </div>
-        <button class="refresh-btn" onclick="fetchSentimentData()">🔄 Refresh</button>
+        <button class="cmd-btn" onclick="fetchSentimentData()">[F5] FORCE REFRESH</button>
     </div>
 </header>
 
-<!-- ═══════════ SENTIMENT OVERVIEW BAR (centered below header) ═══════════ -->
-<div class="sentiment-bar">
-    <div class="sentiment-bar-item bullish">
-        <span class="sentiment-bar-dot bullish"></span>
-        <span>Bullish</span>
-        <strong id="barBullish">—</strong>
-    </div>
-    <div class="sentiment-bar-divider"></div>
-    <div class="sentiment-bar-item bearish">
-        <span class="sentiment-bar-dot bearish"></span>
-        <span>Bearish</span>
-        <strong id="barBearish">—</strong>
-    </div>
-    <div class="sentiment-bar-divider"></div>
-    <div class="sentiment-bar-item neutral">
-        <span class="sentiment-bar-dot neutral"></span>
-        <span>Neutral</span>
-        <strong id="barNeutral">—</strong>
-    </div>
-    <div class="sentiment-bar-divider"></div>
-    <div class="sentiment-bar-total">
-        <span id="barTotal">—</span> headlines scanned
+<!-- ═══════════ 3D GLOBE TIE ═══════════ -->
+<div id="globeViz" aria-label="3D Sentiment Globe Terminal"></div>
+
+<!-- ═══════════ LEFT: REGIONAL RISK ═══════════ -->
+<div class="risk-panel terminal-panel">
+    <div class="panel-header">REGIONAL RISK ANALYSIS &lt;IND&gt;</div>
+    <div class="risk-table" id="cityList">
+        <!-- JS pops in rows here -->
     </div>
 </div>
 
-<!-- ═══════════ 3D GLOBE ═══════════ -->
-<div id="globeViz" aria-label="3D interactive globe showing Indian financial news sentiment"></div>
-
-<!-- ═══════════ CITY BREAKDOWN (Left Panel) ═══════════ -->
-<div class="city-panel">
-    <div class="panel-title"><span class="panel-title-icon">📍</span> City Sentiment</div>
-    <div id="cityList">
-        <!-- Populated by globe.js -->
+<!-- ═══════════ RIGHT: LIVE INTELLIGENCE ═══════════ -->
+<div class="feed-panel terminal-panel">
+    <div class="panel-header">LIVE INTELLIGENCE FEED &lt;RSS&gt;</div>
+    <div class="feed-filters">
+        <button class="filter-btn active" data-filter="all" onclick="filterNews('all', this)">[ALL SCANS]</button>
+        <button class="filter-btn text-bearish" data-filter="bearish" onclick="filterNews('bearish', this)">[HIGH RISK]</button>
+        <button class="filter-btn text-bullish" data-filter="bullish" onclick="filterNews('bullish', this)">[BULLISH]</button>
+    </div>
+    <div class="ticker-container" id="newsFeedList">
+        <!-- JS pops in ticker items here -->
     </div>
 </div>
 
-<!-- ═══════════ NEWS FEED (Right Panel) ═══════════ -->
-<div class="news-feed-panel">
-    <div class="panel-title"><span class="panel-title-icon">📰</span> Live Headlines</div>
-    
-    <!-- Tab Filters -->
-    <div class="feed-tabs">
-        <button class="feed-tab active" data-filter="all" onclick="filterNews('all', this)">All</button>
-        <button class="feed-tab tab-bearish" data-filter="bearish" onclick="filterNews('bearish', this)">🔴 Bad</button>
-        <button class="feed-tab tab-bullish" data-filter="bullish" onclick="filterNews('bullish', this)">🟢 Good</button>
-    </div>
+<!-- ═══════════ BOTTOM: STATUS BAR ═══════════ -->
+<footer class="sys-footer">
+    <span id="statTime">TIME: --:--:--</span>
+    <span>|</span>
+    <span class="text-accent">VOL: <span id="statTotal">--</span> MSGS</span>
+    <span>|</span>
+    <span class="text-bullish">BLL: <span id="statBullish">--</span></span>
+    <span>|</span>
+    <span class="text-bearish">BRH: <span id="statBearish">--</span></span>
+    <span>|</span>
+    <span class="text-neutral">NTR: <span id="statNeutral">--</span></span>
+</footer>
 
-    <div id="newsFeedList">
-        <!-- Populated by globe.js -->
-    </div>
+<!-- ═══════════ TERMINAL LOADER ═══════════ -->
+<div id="globeLoading" class="terminal-loader">
+    INITIATING TERMINAL PROTOCOL...<br>
+    ESTABLISHING RSS FEED LINK...<span class="loader-cursor"></span>
 </div>
 
 <!-- ═══════════ SCRIPTS ═══════════ -->

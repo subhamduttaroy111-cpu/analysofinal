@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- SEO -->
+  <title>3D News Sentiment Globe | Analyso – Indian Stock Market</title>
+  <meta name="description" content="Real-time 3D visualization of Indian financial news sentiment. See live market mood across Mumbai, Delhi, Bengaluru and more financial hubs powered by AI.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.analyso.online/globe.html">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://www.analyso.online/logo.png">
+  <link rel="apple-touch-icon" href="https://www.analyso.online/logo.png">
+  <meta name="theme-color" content="#020617">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="3D News Sentiment Globe | Analyso">
+  <meta property="og:description" content="Real-time 3D globe showing Indian stock market news sentiment across major financial hubs.">
+  <meta property="og:image" content="https://www.analyso.online/og-image.png">
+  <meta property="og:site_name" content="Analyso">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Globe.gl via CDN -->
+  <script src="https://unpkg.com/globe.gl@2.31.1/dist/globe.gl.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/globe.css">
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOADING SCREEN
+═══════════════════════════════════════════════════════ -->
+<div id="globeLoading" class="globe-loading">
+    <div class="globe-loading-spinner"></div>
+    <p class="globe-loading-text">Initializing Sentiment Globe...</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════ -->
+<header class="globe-header">
+    <div class="globe-header-left">
+        <a href="index.html" class="back-btn" aria-label="Back to stock scanner">
+            ← Scanner
+        </a>
+        <div>
+            <div class="globe-title">🌍 News Sentiment Globe</div>
+            <div class="globe-subtitle">Live Indian Market Mood</div>
+        </div>
+    </div>
+    <div class="live-badge">
+        <span class="live-dot"></span>
+        LIVE
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════
+     3D GLOBE CONTAINER
+═══════════════════════════════════════════════════════ -->
+<div id="globeViz" aria-label="3D interactive globe showing Indian financial news sentiment"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     STATS PANEL (Top Right)
+═══════════════════════════════════════════════════════ -->
+<div class="stats-panel">
+    <div class="stats-title">Market Pulse</div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value" id="statTotal" style="color:#818cf8;">—</span>
+            <span class="stat-label">Headlines</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statBullish" style="color:#22c55e;">—</span>
+            <span class="stat-label">Bullish</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statBearish" style="color:#ef4444;">—</span>
+            <span class="stat-label">Bearish</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="statNeutral" style="color:#f59e0b;">—</span>
+            <span class="stat-label">Neutral</span>
+        </div>
+    </div>
+    <div style="text-align:center; margin-top:12px; font-size:0.7rem; color:#64748b;">
+        Last updated: <span id="statTime">—</span>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     LEGEND PANEL (Bottom Left)
+═══════════════════════════════════════════════════════ -->
+<div class="legend-panel">
+    <div class="legend-title">Sentiment Key</div>
+    <div class="legend-items">
+        <div class="legend-item">
+            <span class="legend-dot bullish"></span>
+            <span>Bullish</span>
+            <span class="legend-count" id="legendBullish">—</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot bearish"></span>
+            <span>Bearish</span>
+            <span class="legend-count" id="legendBearish">—</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot neutral"></span>
+            <span>Neutral</span>
+            <span class="legend-count" id="legendNeutral">—</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     NEWS FEED PANEL (Bottom Right)
+═══════════════════════════════════════════════════════ -->
+<div class="news-feed-panel">
+    <div class="news-feed-title">📰 Live Headlines</div>
+    <div id="newsFeedList">
+        <!-- Populated by globe.js -->
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════ -->
+<script src="js/config.js"></script>
+<script src="js/globe.js"></script>
+
+</body>
+</html>

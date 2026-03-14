@@ -235,3 +235,17 @@ def register_routes(app):
             "error": False,
             "news": news
         })
+
+    # ═══════════════════════════════════════════════════════════
+    # 3D GLOBE — News Sentiment API (ADDITIVE — new feature)
+    # This route is completely independent of all existing logic.
+    # ═══════════════════════════════════════════════════════════
+    @app.route('/api/sentiment-globe', methods=['GET'])
+    def sentiment_globe():
+        """Return real-time news sentiment data for the 3D globe."""
+        try:
+            from sentiment_api import get_globe_data
+            return jsonify(get_globe_data())
+        except Exception as e:
+            print(f"⚠️ Sentiment Globe error: {e}")
+            return jsonify({"error": str(e), "hubs": [], "news_points": [], "summary": {}}), 500

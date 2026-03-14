@@ -31,3 +31,6 @@ tqdm>=4.65.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 google-generativeai>=0.3.0
+
+# ── 3D Globe Sentiment (NEW — additive feature) ────
+feedparser>=6.0.0

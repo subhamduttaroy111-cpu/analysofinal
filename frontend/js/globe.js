@@ -1,10 +1,8 @@
 /**
- * globe.js — 3D News Sentiment Globe Visualization
+ * globe.js — 3D News Sentiment Globe (REDESIGNED)
  * ═══════════════════════════════════════════════════
- * ADDITIVE: Brand-new file. Uses Globe.gl (CDN) to render
- * a 3D interactive globe with live Indian market sentiment.
- *
- * NOTE: Uses API_BASE from config.js (loaded before this file).
+ * Clearer, more intuitive UI showing exactly where
+ * good/bad news is coming from in Indian markets.
  */
 
 // ── Config ──────────────────────────────────────────────────
@@ -14,235 +12,284 @@ const INDIA_CENTER = { lat: 22.5, lng: 78.9, altitude: 2.0 };
 // ── State ───────────────────────────────────────────────────
 let globe = null;
 let globeData = null;
+let currentFilter = "all";
 
 // ── Initialize Globe ────────────────────────────────────────
 function initGlobe() {
     const container = document.getElementById("globeViz");
-    if (!container) {
-        console.error("❌ Globe container #globeViz not found");
-        return;
-    }
+    if (!container) return;
 
     try {
         globe = Globe()(container)
-            // Earth appearance
             .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
             .bumpImageUrl("https://unpkg.com/three-globe/example/img/earth-topology.png")
             .backgroundImageUrl("https://unpkg.com/three-globe/example/img/night-sky.png")
             .showAtmosphere(true)
-            .atmosphereColor("rgba(99, 102, 241, 0.3)")
-            .atmosphereAltitude(0.22)
+            .atmosphereColor("rgba(99, 102, 241, 0.25)")
+            .atmosphereAltitude(0.2)
 
-            // Points config (financial hubs)
+            // Hub Points (larger, clearer)
             .pointsData([])
             .pointLat("lat")
             .pointLng("lng")
             .pointColor("color")
-            .pointAltitude(0.02)
-            .pointRadius("radius")
-            .pointLabel(d => `
-                <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:12px 16px;color:#e2e8f0;font-family:Inter,sans-serif;font-size:0.82rem;max-width:280px;">
-                    <strong>${d.label || d.name}</strong><br/>
-                    <span style="color:${d.color}">● ${d.news_count || 0} headlines</span><br/>
-                    <span>Sentiment: ${d.avg_sentiment > 0 ? '+' : ''}${d.avg_sentiment}</span>
-                </div>
-            `)
+            .pointAltitude(d => 0.01 + d.intensity * 0.03)
+            .pointRadius(d => 0.25 + d.intensity * 0.15)
+            .pointLabel(d => {
+                const mood = d.avg_sentiment >= 0.1 ? "📈 Bullish" : d.avg_sentiment <= -0.1 ? "📉 Bearish" : "➡️ Neutral";
+                return `
+                    <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px 18px;color:#e2e8f0;font-family:Inter,sans-serif;font-size:0.82rem;max-width:260px;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                        <div style="font-weight:800;font-size:0.95rem;margin-bottom:6px;">${d.name}</div>
+                        <div style="color:${d.color};font-weight:700;margin-bottom:4px;">${mood}</div>
+                        <div style="color:#94a3b8;font-size:0.75rem;">${d.news_count} headlines • Score: ${d.avg_sentiment > 0 ? '+' : ''}${d.avg_sentiment}</div>
+                    </div>
+                `;
+            })
 
-            // Arcs config (news flow lines)
+            // Arcs (news flow)
             .arcsData([])
             .arcStartLat("startLat")
             .arcStartLng("startLng")
             .arcEndLat("endLat")
             .arcEndLng("endLng")
-            .arcColor("color")
-            .arcAltitude(0.15)
-            .arcStroke(0.5)
-            .arcDashLength(0.6)
-            .arcDashGap(0.3)
-            .arcDashAnimateTime(2000)
+            .arcColor("colors")
+            .arcAltitude(0.12)
+            .arcStroke(0.6)
+            .arcDashLength(0.5)
+            .arcDashGap(0.25)
+            .arcDashAnimateTime(1800)
 
-            // Labels config (city names)
+            // City Labels
             .labelsData([])
             .labelLat("lat")
             .labelLng("lng")
-            .labelText("name")
-            .labelSize(1.2)
-            .labelDotRadius(0.4)
-            .labelColor(() => "rgba(165, 180, 252, 0.85)")
+            .labelText("labelText")
+            .labelSize(1.6)
+            .labelDotRadius(0.5)
+            .labelColor(d => d.color || "rgba(165, 180, 252, 0.85)")
             .labelResolution(2);
 
-        // Auto-rotate slowly
         globe.controls().autoRotate = true;
-        globe.controls().autoRotateSpeed = 0.4;
+        globe.controls().autoRotateSpeed = 0.35;
         globe.controls().enableDamping = true;
         globe.controls().dampingFactor = 0.1;
 
-        // Point camera at India
         setTimeout(() => {
             globe.pointOfView(INDIA_CENTER, 1500);
         }, 500);
 
-        // Handle window resize
         window.addEventListener("resize", () => {
             globe.width(window.innerWidth);
             globe.height(window.innerHeight);
         });
 
-        console.log("✅ Globe initialized successfully");
-
-    } catch (error) {
-        console.error("❌ Globe init error:", error);
+        console.log("✅ Globe initialized");
+    } catch (err) {
+        console.error("❌ Globe init error:", err);
         hideLoader();
     }
 }
 
-// ── Hide Loading Screen ─────────────────────────────────────
+// ── Hide Loader ─────────────────────────────────────────────
 function hideLoader() {
-    const loader = document.getElementById("globeLoading");
-    if (loader) loader.classList.add("hidden");
+    const el = document.getElementById("globeLoading");
+    if (el) el.classList.add("hidden");
 }
 
 // ── Fetch Sentiment Data ────────────────────────────────────
 async function fetchSentimentData() {
     try {
-        // Use API_BASE from config.js (already loaded before this script)
         const backendUrl = (typeof API_BASE !== "undefined" && API_BASE)
             ? API_BASE
             : "https://analysofinal-backend.onrender.com";
 
-        console.log(`🌍 Fetching sentiment from: ${backendUrl}/api/sentiment-globe`);
+        console.log("🌍 Fetching:", backendUrl + "/api/sentiment-globe");
 
-        const response = await fetch(`${backendUrl}/api/sentiment-globe`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const res = await fetch(`${backendUrl}/api/sentiment-globe`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        globeData = await response.json();
-
-        if (globeData.error && typeof globeData.error === "string") {
-            throw new Error(globeData.error);
-        }
+        globeData = await res.json();
+        if (globeData.error && typeof globeData.error === "string") throw new Error(globeData.error);
 
         updateGlobe(globeData);
-        updatePanels(globeData);
+        updateSentimentBar(globeData);
+        updateCityPanel(globeData);
+        updateNewsFeed(globeData);
         hideLoader();
 
-        console.log(`✅ Loaded ${globeData.total_headlines} headlines`);
-
-    } catch (error) {
-        console.error("❌ Sentiment fetch error:", error);
-        showFallbackData();
+        console.log("✅ Loaded", globeData.total_headlines, "headlines");
+    } catch (err) {
+        console.error("❌ Fetch error:", err);
+        showFallback();
     }
 }
 
-// ── Update Globe with Data ──────────────────────────────────
+// ── Update Globe ────────────────────────────────────────────
 function updateGlobe(data) {
     if (!globe || !data) return;
 
-    // Hub points (big glowing markers)
-    const hubPoints = data.hubs.map(hub => ({
-        ...hub,
-        radius: Math.max(0.3, hub.news_count * 0.08),
+    // Hub city points
+    const points = data.hubs.map(h => ({
+        ...h,
+        intensity: Math.min(h.news_count, 10),
     }));
 
-    // News arcs (from a central "source" point to each hub)
-    const sourcePoint = { lat: 5.0, lng: 55.0 }; // Indian Ocean — looks cool
-    const arcs = data.news_points.map(np => ({
-        startLat: sourcePoint.lat + (Math.random() - 0.5) * 8,
-        startLng: sourcePoint.lng + (Math.random() - 0.5) * 8,
-        endLat: np.lat,
-        endLng: np.lng,
-        color: [np.sentiment.color, np.sentiment.color],
+    // Create arcs from each news point to its assigned city
+    // Use different source coordinates based on news source for visual variety
+    const sourceCoords = {
+        "Economic Times": { lat: 19.076, lng: 65.0 },  // West of Mumbai
+        "MoneyControl":   { lat: 25.0, lng: 68.0 },     // NW India
+        "Livemint":       { lat: 15.0, lng: 66.0 },     // SW coast
+    };
+
+    const arcs = data.news_points.map(np => {
+        const src = sourceCoords[np.source] || { lat: 10.0, lng: 60.0 };
+        return {
+            startLat: src.lat + (Math.random() - 0.5) * 3,
+            startLng: src.lng + (Math.random() - 0.5) * 3,
+            endLat: np.lat,
+            endLng: np.lng,
+            colors: [np.sentiment.color + "88", np.sentiment.color],
+        };
+    });
+
+    // Labels with emoji indicators
+    const labels = data.hubs.map(h => ({
+        lat: h.lat,
+        lng: h.lng,
+        labelText: h.name,
+        color: h.color,
     }));
 
-    // Labels for city names
-    const labels = data.hubs.map(hub => ({
-        lat: hub.lat,
-        lng: hub.lng,
-        name: hub.name,
-    }));
-
-    globe.pointsData(hubPoints);
+    globe.pointsData(points);
     globe.arcsData(arcs);
     globe.labelsData(labels);
 }
 
-// ── Update UI Panels ────────────────────────────────────────
-function updatePanels(data) {
-    if (!data) return;
+// ── Update Sentiment Bar ────────────────────────────────────
+function updateSentimentBar(data) {
+    setText("barBullish", data.summary.bullish || 0);
+    setText("barBearish", data.summary.bearish || 0);
+    setText("barNeutral", data.summary.neutral || 0);
+    setText("barTotal", data.total_headlines || 0);
+}
 
-    // Stats panel
-    const totalEl = document.getElementById("statTotal");
-    const bullishEl = document.getElementById("statBullish");
-    const bearishEl = document.getElementById("statBearish");
-    const neutralEl = document.getElementById("statNeutral");
-    const timeEl = document.getElementById("statTime");
+// ── Update City Panel ───────────────────────────────────────
+function updateCityPanel(data) {
+    const container = document.getElementById("cityList");
+    if (!container) return;
 
-    if (totalEl) totalEl.textContent = data.total_headlines || 0;
-    if (bullishEl) bullishEl.textContent = data.summary.bullish || 0;
-    if (bearishEl) bearishEl.textContent = data.summary.bearish || 0;
-    if (neutralEl) neutralEl.textContent = data.summary.neutral || 0;
-    if (timeEl) {
-        const dt = new Date(data.timestamp);
-        timeEl.textContent = dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    // Sort: most bearish cities first so user sees "where bad news comes from" at top
+    const sorted = [...data.hubs].sort((a, b) => a.avg_sentiment - b.avg_sentiment);
+
+    container.innerHTML = sorted.map(hub => {
+        let sentLabel, sentClass;
+        if (hub.avg_sentiment >= 0.1) { sentLabel = "Bullish"; sentClass = "bullish"; }
+        else if (hub.avg_sentiment <= -0.1) { sentLabel = "Bearish"; sentClass = "bearish"; }
+        else if (hub.news_count === 0) { sentLabel = "No Data"; sentClass = "inactive"; }
+        else { sentLabel = "Neutral"; sentClass = "neutral"; }
+
+        return `
+            <div class="city-row">
+                <span class="city-indicator" style="background:${hub.color}; box-shadow: 0 0 6px ${hub.color}50;"></span>
+                <span class="city-name">${hub.name}</span>
+                <span class="city-sentiment-tag ${sentClass}">${sentLabel}</span>
+                <span class="city-count">${hub.news_count}</span>
+            </div>
+        `;
+    }).join("");
+}
+
+// ── Update News Feed ────────────────────────────────────────
+function updateNewsFeed(data) {
+    if (!data || !data.news_points) return;
+    renderNewsItems(data.news_points, currentFilter);
+}
+
+function renderNewsItems(newsPoints, filter) {
+    const container = document.getElementById("newsFeedList");
+    if (!container) return;
+
+    const filtered = filter === "all"
+        ? newsPoints
+        : newsPoints.filter(np => np.sentiment.label.toLowerCase() === filter);
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:24px; color:#64748b; font-size:0.82rem;">
+            No ${filter} news at the moment.
+        </div>`;
+        return;
     }
 
-    // Legend counts
-    const legendBullish = document.getElementById("legendBullish");
-    const legendBearish = document.getElementById("legendBearish");
-    const legendNeutral = document.getElementById("legendNeutral");
-    if (legendBullish) legendBullish.textContent = data.summary.bullish || 0;
-    if (legendBearish) legendBearish.textContent = data.summary.bearish || 0;
-    if (legendNeutral) legendNeutral.textContent = data.summary.neutral || 0;
+    container.innerHTML = filtered.slice(0, 15).map(np => {
+        const sentClass = np.sentiment.label.toLowerCase();
+        const scoreClass = np.sentiment.score > 0 ? "positive" : np.sentiment.score < 0 ? "negative" : "neutral-score";
+        const scoreText = np.sentiment.score > 0 ? `+${np.sentiment.score}` : `${np.sentiment.score}`;
 
-    // News feed
-    const feedContainer = document.getElementById("newsFeedList");
-    if (feedContainer && data.news_points) {
-        feedContainer.innerHTML = data.news_points.slice(0, 12).map(np => `
-            <a href="${np.link}" target="_blank" rel="noopener" class="news-feed-item">
-                <div class="news-item-header">
-                    <span class="sentiment-badge ${np.sentiment.label.toLowerCase()}">${np.sentiment.label}</span>
-                    <span style="font-size:0.65rem; color:#64748b;">${np.city}</span>
+        return `
+            <a href="${np.link}" target="_blank" rel="noopener" class="news-feed-item ${sentClass}-item">
+                <div class="news-item-top">
+                    <span class="sentiment-badge ${sentClass}">${np.sentiment.label}</span>
+                    <span class="news-city-tag">📍 ${np.city}</span>
                 </div>
                 <div class="news-item-title">${np.title}</div>
-                <div class="news-item-meta">${np.source}</div>
+                <div class="news-item-footer">
+                    <span class="news-source">📡 ${np.source}</span>
+                    <span class="news-score ${scoreClass}">${scoreText}</span>
+                </div>
             </a>
-        `).join("");
+        `;
+    }).join("");
+}
+
+// ── Tab Filter ──────────────────────────────────────────────
+function filterNews(filter, tabEl) {
+    currentFilter = filter;
+
+    // Update active tab
+    document.querySelectorAll(".feed-tab").forEach(t => t.classList.remove("active"));
+    if (tabEl) tabEl.classList.add("active");
+
+    // Re-render with filter
+    if (globeData && globeData.news_points) {
+        renderNewsItems(globeData.news_points, filter);
     }
 }
 
-// ── Fallback Data (if API is unavailable) ───────────────────
-function showFallbackData() {
+// ── Fallback ────────────────────────────────────────────────
+function showFallback() {
     hideLoader();
 
-    // Show hubs with neutral colors
     const fallbackHubs = [
-        { name: "Mumbai", label: "Mumbai — BSE/NSE HQ", lat: 19.076, lng: 72.878, color: "#64748b", radius: 0.4, news_count: 0, avg_sentiment: 0 },
-        { name: "Delhi", label: "Delhi — Policy Hub", lat: 28.614, lng: 77.209, color: "#64748b", radius: 0.3, news_count: 0, avg_sentiment: 0 },
-        { name: "Bengaluru", label: "Bengaluru — Tech/IT", lat: 12.972, lng: 77.595, color: "#64748b", radius: 0.3, news_count: 0, avg_sentiment: 0 },
-        { name: "Chennai", label: "Chennai — Industrial", lat: 13.083, lng: 80.271, color: "#64748b", radius: 0.3, news_count: 0, avg_sentiment: 0 },
-        { name: "Hyderabad", label: "Hyderabad — Pharma/IT", lat: 17.385, lng: 78.487, color: "#64748b", radius: 0.3, news_count: 0, avg_sentiment: 0 },
-        { name: "Kolkata", label: "Kolkata — Eastern Trade", lat: 22.573, lng: 88.364, color: "#64748b", radius: 0.3, news_count: 0, avg_sentiment: 0 },
+        { name: "Mumbai", lat: 19.076, lng: 72.878, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
+        { name: "Delhi", lat: 28.614, lng: 77.209, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
+        { name: "Bengaluru", lat: 12.972, lng: 77.595, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
+        { name: "Chennai", lat: 13.083, lng: 80.271, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
+        { name: "Hyderabad", lat: 17.385, lng: 78.487, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
+        { name: "Kolkata", lat: 22.573, lng: 88.364, color: "#64748b", intensity: 1, news_count: 0, avg_sentiment: 0 },
     ];
 
     if (globe) {
         globe.pointsData(fallbackHubs);
-        globe.labelsData(fallbackHubs);
+        globe.labelsData(fallbackHubs.map(h => ({ lat: h.lat, lng: h.lng, labelText: h.name, color: h.color })));
     }
 
-    // Show waiting message
-    const totalEl = document.getElementById("statTotal");
-    if (totalEl) totalEl.textContent = "—";
-
-    const feedContainer = document.getElementById("newsFeedList");
-    if (feedContainer) {
-        feedContainer.innerHTML = `
-            <div style="text-align:center; padding:20px; color:#94a3b8; font-size:0.85rem;">
-                <p>⏳ Waiting for Render backend to wake up...</p>
-                <p style="margin-top:8px; font-size:0.75rem; color:#64748b;">
-                    First load may take 1-2 minutes. The globe will auto-refresh.
-                </p>
+    const feed = document.getElementById("newsFeedList");
+    if (feed) {
+        feed.innerHTML = `
+            <div style="text-align:center; padding:24px; color:#94a3b8; font-size: 0.82rem; line-height:1.6;">
+                <div style="font-size:1.5rem; margin-bottom:10px;">⏳</div>
+                <strong>Waking up the server...</strong><br>
+                <span style="color:#64748b; font-size:0.75rem;">First load may take 1-2 minutes on Render free tier.<br>The page will auto-refresh.</span>
             </div>
         `;
     }
+}
+
+// ── Utility ─────────────────────────────────────────────────
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
 }
 
 // ── Boot ─────────────────────────────────────────────────────
@@ -250,7 +297,5 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("🌍 Globe page loaded");
     initGlobe();
     fetchSentimentData();
-
-    // Auto-refresh every 5 minutes
     setInterval(fetchSentimentData, GLOBE_REFRESH_INTERVAL);
 });

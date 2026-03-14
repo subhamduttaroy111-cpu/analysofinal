@@ -257,7 +257,7 @@ function updateGlobeLayer(data) {
 // ── Market Indices Component ──────────────────────────────────
 async function fetchPrice(url) {
     try {
-        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
         const res = await fetch(proxyUrl);
         const data = await res.json();
         const meta = data.chart.result[0].meta;

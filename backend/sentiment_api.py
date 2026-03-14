@@ -15,24 +15,34 @@ from datetime import datetime
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 _sia = SentimentIntensityAnalyzer()
 
-# ── Indian Financial Hub Coordinates ──────────────────────────
-INDIAN_HUBS = {
-    "Mumbai":    {"lat": 19.076,  "lng": 72.878,  "label": "Mumbai — BSE/NSE HQ"},
+# ── Global Financial Hub Coordinates ──────────────────────────
+GLOBAL_HUBS = {
+    "Mumbai":    {"lat": 19.076,  "lng": 72.878,  "label": "Mumbai — BSE/NSE"},
     "Delhi":     {"lat": 28.614,  "lng": 77.209,  "label": "Delhi — Policy Hub"},
     "Bengaluru": {"lat": 12.972,  "lng": 77.595,  "label": "Bengaluru — Tech/IT"},
     "Chennai":   {"lat": 13.083,  "lng": 80.271,  "label": "Chennai — Industrial"},
     "Hyderabad": {"lat": 17.385,  "lng": 78.487,  "label": "Hyderabad — Pharma/IT"},
     "Kolkata":   {"lat": 22.573,  "lng": 88.364,  "label": "Kolkata — Eastern Trade"},
+    "New York":  {"lat": 40.712,  "lng": -74.006, "label": "New York — Wall St/Fed"},
+    "London":    {"lat": 51.507,  "lng": -0.127,  "label": "London — Euro Markets"},
+    "Tokyo":     {"lat": 35.676,  "lng": 139.650, "label": "Tokyo — Nikkei/BOJ"},
+    "Beijing":   {"lat": 39.904,  "lng": 116.407, "label": "Beijing — PBOC/Trade"},
+    "Dubai":     {"lat": 25.204,  "lng": 55.270,  "label": "Dubai — Middle East/Oil"},
 }
 
-# ── City-keyword map: route headlines to the right hub ────────
-CITY_KEYWORDS = {
-    "Mumbai":    ["bse", "nse", "sensex", "nifty", "rbi", "sebi", "mumbai", "reliance", "tata", "hdfc", "icici", "bajaj"],
-    "Delhi":     ["delhi", "government", "policy", "budget", "modi", "parliament", "rbi", "tax", "gst", "fiscal"],
+# ── Hub-keyword map: route headlines to the right hub ────────
+HUB_KEYWORDS = {
+    "Mumbai":    ["bse", "nse", "sensex", "nifty", "rbi", "sebi", "mumbai", "reliance", "tata", "hdfc", "icici", "bajaj", "india"],
+    "Delhi":     ["delhi", "government", "policy", "budget", "modi", "parliament", "tax", "gst", "fiscal"],
     "Bengaluru": ["bengaluru", "bangalore", "infosys", "wipro", "tech", "startup", "it sector", "software"],
     "Chennai":   ["chennai", "auto", "automobile", "ashok leyland", "tvs", "titan", "manufacturing"],
     "Hyderabad": ["hyderabad", "pharma", "biotech", "dr reddy", "cipla", "healthcare", "generic"],
     "Kolkata":   ["kolkata", "coal", "itc", "eastern", "calcutta", "bandhan", "emami"],
+    "New York":  ["us ", "u.s.", "fed", "wall street", "dow", "nasdaq", "new york", "america", "biden", "powell"],
+    "London":    ["uk ", "u.k.", "london", "boe", "ftse", "europe", "britain", "brexit"],
+    "Tokyo":     ["japan", "tokyo", "nikkei", "boj", "yen", "asia market", "asian market"],
+    "Beijing":   ["china", "beijing", "pboc", "shanghai", "yuan", "xi jinping"],
+    "Dubai":     ["dubai", "middle east", "oil", "opec", "saudi", "gulf", "emirates"],
 }
 
 # ── Sector-keyword map: route headlines to sectors ────────────
@@ -99,13 +109,13 @@ def _analyze_sentiment(text):
 
 
 def _assign_city(headline_text):
-    """Map a headline to an Indian financial hub based on keywords."""
+    """Map a headline to a global financial hub based on keywords."""
     text_lower = headline_text.lower()
-    for city, keywords in CITY_KEYWORDS.items():
+    for city, keywords in HUB_KEYWORDS.items():
         for kw in keywords:
             if kw in text_lower:
                 return city
-    # Default: Mumbai (financial capital, catches general market news)
+    # Default: Mumbai
     return "Mumbai"
 
 def _assign_sector(headline_text):
@@ -148,7 +158,7 @@ def get_globe_data():
         sentiment = _analyze_sentiment(h["title"])
         city = _assign_city(h["title"])
         sector = _assign_sector(h["title"])
-        hub = INDIAN_HUBS[city]
+        hub = GLOBAL_HUBS[city]
 
         # Unique ID for deduplication
         uid = hashlib.md5(h["title"].encode()).hexdigest()[:8]
@@ -172,7 +182,7 @@ def get_globe_data():
 
     # 3. Build hub points
     hubs = []
-    for name, coords in INDIAN_HUBS.items():
+    for name, coords in GLOBAL_HUBS.items():
         # Aggregate sentiment for this hub
         hub_news = [n for n in news_points if n["city"] == name]
         if hub_news:

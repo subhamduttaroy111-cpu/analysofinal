@@ -250,9 +250,21 @@ def register_routes(app):
             print(f"⚠️ Sentiment Globe error: {e}")
             return jsonify({"error": str(e), "hubs": [], "news_points": [], "summary": {}}), 500
 
+    # Cache for Market Indices to avoid 429 Too Many Requests from YFinance
+    INDICES_CACHE = {}
+    INDICES_CACHE_TIMEOUT = 300  # 5 minutes
+
     @app.route('/api/market-indices', methods=['GET'])
     def market_indices():
         """Fetch live prices for Nifty, Sensex, and BankNifty"""
+        current_time = time.time()
+        
+        # Check Cache
+        if "data" in INDICES_CACHE:
+            cached_result, timestamp = INDICES_CACHE["data"]
+            if current_time - timestamp < INDICES_CACHE_TIMEOUT:
+                return jsonify({"status": "success", "data": cached_result, "cached": True})
+
         indices = {
             "NIFTY 50": "^NSEI",
             "SENSEX": "^BSESN",
@@ -262,19 +274,12 @@ def register_routes(app):
         try:
             for name, symbol in indices.items():
                 ticker = yf.Ticker(symbol)
-                todays_data = ticker.history(period='1d')
-                if not todays_data.empty:
-                    current_price = todays_data['Close'].iloc[0] # or -1
-                    # To be safer with just 1d data:
-                    current_price = todays_data['Close'].iloc[-1]
-                    prev_close = ticker.info.get('previousClose', current_price)
-                    
-                    # Sometimes fast history doesn't quickly get previousClose from info
-                    # Let's use 5d history to ensure we have the previous close robustly
-                    hist = ticker.history(period='5d')
-                    if len(hist) > 1:
-                        current_price = hist['Close'].iloc[-1]
-                        prev_close = hist['Close'].iloc[-2]
+                # Using 5d history avoids returning entirely empty dataframes causing failures
+                hist = ticker.history(period='5d')
+                
+                if not hist.empty:
+                    current_price = hist['Close'].iloc[-1]
+                    prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
                         
                     change = current_price - prev_close
                     change_pct = (change / prev_close) * 100 if prev_close else 0
@@ -286,7 +291,12 @@ def register_routes(app):
                         "change_pct": round(change_pct, 2),
                         "status": "BULLISH" if change >= 0 else "BEARISH"
                     })
-            return jsonify({"status": "success", "data": results})
+            
+            # Save to Cache
+            if results:
+                INDICES_CACHE["data"] = (results, current_time)
+                
+            return jsonify({"status": "success", "data": results, "cached": False})
         except Exception as e:
             print(f"Error fetching indices: {e}")
-            return jsonify({"status": "error", "message": str(e)}), 500
+            return jsonify({"status": "error", "message": f"Rate limit exceeded or unavailable. {e}"}), 503

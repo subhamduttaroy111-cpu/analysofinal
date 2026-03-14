@@ -35,6 +35,17 @@ CITY_KEYWORDS = {
     "Kolkata":   ["kolkata", "coal", "itc", "eastern", "calcutta", "bandhan", "emami"],
 }
 
+# ── Sector-keyword map: route headlines to sectors ────────────
+SECTOR_KEYWORDS = {
+    "Banking & Fin": ["bank", "hdfc", "icici", "sbi", "kotak", "axis", "rbi", "nbfc", "lending", "finance", "bajaj finance"],
+    "IT & Tech":     ["it ", "tech", "infosys", "tcs", "wipro", "hcl", "software", "startup", "ai", "digital"],
+    "Def & Aero":    ["defence", "aerospace", "hal", "bel", "mazagon", "military"],
+    "Pharma":        ["pharma", "health", "dr reddy", "sun pharma", "cipla", "lupin", "biotech", "hospital"],
+    "Auto":          ["auto", "car", "ev", "tata motors", "maruti", "mahindra", "hero moto", "bajaj auto"],
+    "FMCG":          ["fmcg", "consumer", "itc", "hul", "nestle", "dabur", "godrej", "retail"],
+    "Energy & Metal": ["energy", "power", "oil", "ongc", "coal", "steel", "tata steel", "jsw", "reliance", "adani"],
+}
+
 # ── RSS Feed Sources ──────────────────────────────────────────
 RSS_FEEDS = [
     {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms", "source": "Economic Times"},
@@ -97,6 +108,16 @@ def _assign_city(headline_text):
     # Default: Mumbai (financial capital, catches general market news)
     return "Mumbai"
 
+def _assign_sector(headline_text):
+    """Map a headline to a business sector based on keywords."""
+    text_lower = headline_text.lower()
+    for sector, keywords in SECTOR_KEYWORDS.items():
+        for kw in keywords:
+            if kw in text_lower:
+                return sector
+    return "General"
+
+
 
 def get_globe_data():
     """
@@ -126,6 +147,7 @@ def get_globe_data():
     for h in headlines:
         sentiment = _analyze_sentiment(h["title"])
         city = _assign_city(h["title"])
+        sector = _assign_sector(h["title"])
         hub = INDIAN_HUBS[city]
 
         # Unique ID for deduplication
@@ -138,6 +160,7 @@ def get_globe_data():
             "link": h["link"],
             "published": h["published"],
             "city": city,
+            "sector": sector,
             "lat": hub["lat"] + (hash(uid) % 100 - 50) * 0.005,  # Slight jitter
             "lng": hub["lng"] + (hash(uid) % 100 - 50) * 0.005,
             "sentiment": sentiment,
@@ -174,16 +197,33 @@ def get_globe_data():
             "avg_sentiment": round(avg_score, 3),
         })
 
-    # 4. Build response
+    # 4. Build sector aggregations
+    sectors = []
+    sector_names = list(SECTOR_KEYWORDS.keys()) + ["General"]
+    for s_name in sector_names:
+        s_news = [n for n in news_points if n["sector"] == s_name]
+        if s_news:
+            avg_score = sum(n["sentiment"]["score"] for n in s_news) / len(s_news)
+            sectors.append({
+                "name": s_name,
+                "news_count": len(s_news),
+                "avg_sentiment": round(avg_score, 3)
+            })
+
+    # Sort sectors by highest news count
+    sectors.sort(key=lambda x: x["news_count"], reverse=True)
+
+    # 5. Build response
     response = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "hubs": hubs,
+        "sectors": sectors,
         "news_points": news_points,
         "summary": summary,
         "total_headlines": len(news_points),
     }
 
-    # 5. Cache it
+    # 6. Cache it
     _cache["data"] = response
     _cache["timestamp"] = now
 

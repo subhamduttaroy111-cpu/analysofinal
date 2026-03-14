@@ -23,8 +23,8 @@ function initGlobe() {
     try {
         globe = Globe()(container)
             // Stark mapping — removing typical blue marble for a darker satellite feel
-            .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-water-png.png")
-            .backgroundImageUrl("https://unpkg.com/three-globe/example/img/night-sky.png")
+            .globeImageUrl("https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water-png.png")
+            .backgroundImageUrl("https://cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png")
             .showAtmosphere(true)
             .atmosphereColor("#1F2937") // Hard terminal gray ring
             .atmosphereAltitude(0.15)
@@ -202,6 +202,7 @@ function updateUIComponents(data) {
 
     // 3. Risk Panel Layer
     updateRiskPanel(data);
+    updateSectorPanel(data);
 
     // 4. Intelligence Feed Layer
     updateNewsFeed(data);
@@ -270,6 +271,35 @@ function updateRiskPanel(data) {
     }).join("");
 }
 
+function updateSectorPanel(data) {
+    const list = document.getElementById("sectorList");
+    if (!list || !data.sectors) return;
+
+    // Sort: High risk sectors at the top
+    const sorted = [...data.sectors].sort((a, b) => a.avg_sentiment - b.avg_sentiment);
+
+    list.innerHTML = sorted.map(sec => {
+        const hex = getTerminalColorCode(sec.avg_sentiment, sec.news_count);
+        const lbl = getTerminalLabel(sec.avg_sentiment, sec.news_count);
+        
+        // Intensity meter calculation (sectors might have more news)
+        const intensity = Math.min((sec.news_count / 20) * 100, 100);
+
+        return `
+            <div class="risk-row">
+                <div class="risk-cell risk-col-city" style="font-size:0.65rem;">${sec.name.toUpperCase()}</div>
+                <div class="risk-cell risk-col-score" style="color:${hex}">${lbl}</div>
+                <div class="risk-cell risk-col-meter">
+                    <div class="meter-bg">
+                        <div class="meter-fill" style="width:${intensity}%; background:${hex};"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+
 // ── Intelligence Component ──────────────────────────────────
 function updateNewsFeed(data) {
     if (!data || !data.news_points) return;
@@ -296,6 +326,7 @@ function renderFeedItems(news, filter) {
                     <span class="ticker-sentiment ${tag}">${tag}</span>
                     <span class="ticker-source">${n.source.toUpperCase().substr(0,10)}</span>
                     <span class="ticker-city">&lt;${n.city.substring(0,3).toUpperCase()}&gt;</span>
+                    <span class="ticker-city" style="color:#A78BFA;">[${n.sector.toUpperCase()}]</span>
                 </div>
                 <div class="ticker-headline">${n.title}</div>
             </a>

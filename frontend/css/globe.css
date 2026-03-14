@@ -143,6 +143,62 @@ body::before {
 }
 @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
 
+@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+
+/* ── Top Indices Bar ── */
+.top-indices-bar {
+    position: absolute;
+    top: 76px;
+    left: 16px;
+    right: 16px;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    pointer-events: auto;
+}
+
+.index-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 250px;
+    transition: transform 0.2s;
+}
+
+.index-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.index-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.index-price {
+    font-size: 1.15rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.index-change {
+    text-align: right;
+    font-size: 0.85rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
 /* ── Main Layout ── */
 #globeViz {
     width: 100vw;
@@ -163,7 +219,7 @@ body::before {
 .left-column {
     pointer-events: auto;
     position: absolute;
-    top: 86px; left: 16px; bottom: 50px;
+    top: 156px; left: 16px; bottom: 50px;
     width: 320px;
     display: flex;
     flex-direction: column;
@@ -218,7 +274,7 @@ body::before {
 .feed-panel {
     pointer-events: auto;
     position: absolute;
-    top: 86px; right: 16px; bottom: 50px;
+    top: 156px; right: 16px; bottom: 50px;
     width: 400px;
     display: flex;
     flex-direction: column;
@@ -383,10 +439,22 @@ body::before {
     }
 
     /* Reset absolute positioning from desktop */
-    #globeViz, .left-column, .feed-panel {
+    #globeViz, .left-column, .feed-panel, .top-indices-bar {
         position: relative;
         top: auto; left: auto; right: auto; bottom: auto;
         z-index: 1;
+    }
+
+    .top-indices-bar {
+        flex-direction: column;
+        width: 100%;
+        padding: 0;
+        gap: 12px;
+        order: 0;
+    }
+
+    .index-card {
+        width: 100%;
     }
 
     /* We need to separate Risk and Sector to slot the globe in between */

@@ -255,48 +255,77 @@ function updateGlobeLayer(data) {
 }
 
 // ── Market Indices Component ──────────────────────────────────
+async function fetchPrice(url) {
+    try {
+        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+        const res = await fetch(proxyUrl);
+        const data = await res.json();
+        const meta = data.chart.result[0].meta;
+        return {
+            price: meta.regularMarketPrice,
+            change: meta.regularMarketPrice - meta.previousClose,
+            changePct: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose * 100).toFixed(2)
+        };
+    } catch (e) {
+        console.error("Fetch Price Error:", e);
+        return null;
+    }
+}
+
 async function fetchAndDisplayMarketIndices() {
-    const list = document.getElementById("marketIndicesList");
+    const list = document.getElementById("topIndicesBar");
     if (!list) return;
 
-    try {
-        const backendUrl = typeof API_BASE !== "undefined" ? API_BASE : "https://analysofinal-backend.onrender.com";
-
-        const res = await fetch(`${backendUrl}/api/market-indices`, {
-           headers: { 'Accept': 'application/json' }
-        });
-        
-        let json;
-        try {
-            json = await res.json();
-        } catch (je) {
-            throw new Error(`Parse failed: ${res.status} ${res.statusText}`);
-        }
-        
-        if (json.status === "success" && json.data && json.data.length > 0) {
-            list.innerHTML = json.data.map(idx => {
-                const isBullish = idx.change >= 0;
-                const hex = isBullish ? "#10b981" : "#ef4444"; // match new theme css var manually
-                const sign = isBullish ? "+" : "";
-                
-                return `
-                    <div class="risk-row" style="justify-content: space-between; padding-right: 16px;">
-                        <div class="risk-cell risk-col-city">${idx.name}</div>
-                        <div class="risk-cell" style="font-weight: 700; font-family: var(--font-mono);">${idx.price.toFixed(2)}</div>
-                        <div class="risk-cell" style="color:${hex}; font-weight: 700; font-size: 0.75rem; text-align: right; width: 80px;">
-                            ${sign}${idx.change.toFixed(2)}<br>
-                            (${sign}${idx.change_pct.toFixed(2)}%)
-                        </div>
-                    </div>
-                `;
-            }).join("");
-        } else {
-            list.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--signal-bearish); font-size: 0.8rem;">DATA UNAVAILABLE</div>`;
-        }
-    } catch (err) {
-        console.error("Market Indices Error:", err);
-        list.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--signal-bearish); font-size: 0.8rem;">CONNECTION ERROR</div>`;
+    if (list.innerHTML.trim() === "") {
+        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; font-weight:700;">FETCHING LIVE INDICES...</div>`;
     }
+
+    const indices = [
+        { name: "NIFTY 50", url: "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI" },
+        { name: "SENSEX", url: "https://query1.finance.yahoo.com/v8/finance/chart/%5EBSESN" },
+        { name: "BANK NIFTY", url: "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK" }
+    ];
+
+    let htmlContent = "";
+
+    for (let idx of indices) {
+        const data = await fetchPrice(idx.url);
+        if (data) {
+            const isBullish = data.change >= 0;
+            const hex = isBullish ? "#10b981" : "#ef4444";
+            const sign = isBullish ? "+" : "";
+            
+            const formattedPrice = data.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const changeAbs = Math.abs(data.change).toFixed(2);
+            
+            htmlContent += `
+                <div class="index-card">
+                    <div class="index-info">
+                        <div class="index-name">${idx.name}</div>
+                        <div class="index-price">${formattedPrice}</div>
+                    </div>
+                    <div class="index-change" style="color:${hex};">
+                        ${sign}${changeAbs}<br>
+                        (${sign}${data.changePct}%)
+                    </div>
+                </div>
+            `;
+        } else {
+            htmlContent += `
+                <div class="index-card">
+                    <div class="index-info">
+                        <div class="index-name">${idx.name}</div>
+                        <div class="index-price" style="color:var(--text-muted);">N/A</div>
+                    </div>
+                    <div class="index-change" style="color:var(--signal-bearish);">
+                        ERR
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    list.innerHTML = htmlContent;
 }
 
 function updateSectorPanel(data) {
@@ -389,8 +418,13 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchSentimentData();
     fetchAndDisplayMarketIndices();
     
+    // Globe sentiment refetches every 5 mins
     setInterval(() => { 
         if (dataLoaded) fetchSentimentData(); 
-        fetchAndDisplayMarketIndices();
     }, GLOBE_REFRESH_INTERVAL);
+
+    // Live Indices refetch every 15 seconds
+    setInterval(() => {
+        fetchAndDisplayMarketIndices();
+    }, 15000);
 });

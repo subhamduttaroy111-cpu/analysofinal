@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/globe.css?v=6">
+  <link rel="stylesheet" href="css/globe.css?v=7">
 </head>
 
 <body>
@@ -39,6 +39,11 @@
     </div>
 </header>
 
+<!-- ═══════════ TOP INDICES BAR ═══════════ -->
+<div class="top-indices-bar" id="topIndicesBar">
+    <!-- JS pops in indices cards here -->
+</div>
+
 <!-- ═══════════ MAIN LAYOUT GRID ═══════════ -->
 <div class="main-layout">
     <!-- ═══════════ 3D GLOBE TIE ═══════════ -->
@@ -46,15 +51,6 @@
 
     <!-- ═══════════ LEFT COLUMN (REGIONAL / SECTOR RISK) ═══════════ -->
     <div class="left-column">
-        <div class="risk-panel terminal-panel">
-            <div class="panel-header">INDIAN MARKETS &lt;LIVE&gt;</div>
-            <div class="risk-table" id="marketIndicesList">
-                <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
-                    FETCHING LIVE INDICES...<span class="loader-cursor"></span>
-                </div>
-            </div>
-        </div>
-
         <div class="sector-panel terminal-panel">
             <div class="panel-header">SECTOR RISK MATRIX &lt;IND&gt;</div>
             <div class="risk-table" id="sectorList">
@@ -98,7 +94,7 @@
 
 <!-- ═══════════ SCRIPTS ═══════════ -->
 <script src="js/config.js?v=6"></script>
-<script src="js/globe.js?v=6"></script>
+<script src="js/globe.js?v=7"></script>
 
 </body>
 </html>

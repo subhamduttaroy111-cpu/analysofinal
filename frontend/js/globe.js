@@ -22,14 +22,13 @@ function initGlobe() {
 
     try {
         globe = Globe()(container)
-            // High contrast visible earth instead of pure darkness
-            .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+            // White & Blue Theme visible earth
+            .globeImageUrl("//unpkg.com/three-globe/example/img/earth-day.jpg")
             .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
-            .backgroundImageUrl("//unpkg.com/three-globe/example/img/night-sky.png")
             .showAtmosphere(true)
-            .atmosphereColor("#1F2937") // Hard terminal gray ring
-            .atmosphereAltitude(0.15)
-            .backgroundColor("#02040A")
+            .atmosphereColor("#3b82f6") // Light blue
+            .atmosphereAltitude(0.2)
+            .backgroundColor("#f8fafc")
 
             // Hub Points (sharp terminal dots)
             .pointsData([])
@@ -39,10 +38,10 @@ function initGlobe() {
             .pointAltitude(0.01)
             .pointRadius(d => 0.4 + (d.news_count * 0.1))
             .pointLabel(d => `
-                <div style="background:#090E17;border:1px solid #1F2937;padding:8px;font-family:'Roboto Mono',monospace;font-size:0.7rem;color:#E2E8F0;">
-                    <div style="color:#FFF;font-weight:700;margin-bottom:4px;border-bottom:1px solid #1F2937;padding-bottom:2px;">[ ${d.name.toUpperCase()} ]</div>
-                    <div>VOL: ${d.news_count} SCANS</div>
-                    <div>SCR: <span style="color:${getTerminalColorCode(d.avg_sentiment, d.news_count)}">${d.avg_sentiment}</span></div>
+                <div style="background:#ffffff;border:1px solid #e2e8f0;padding:8px;font-family:'Inter',sans-serif;font-size:0.75rem;color:#0f172a;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border-radius:8px;">
+                    <div style="color:#0f172a;font-weight:800;margin-bottom:4px;border-bottom:1px solid #e2e8f0;padding-bottom:4px;">${d.name.toUpperCase()}</div>
+                    <div style="color:#64748b;font-weight:600;margin-top:4px;">VOL: <span style="color:#0f172a">${d.news_count}</span></div>
+                    <div style="color:#64748b;font-weight:600;">SCR: <span style="color:${getTerminalColorCode(d.avg_sentiment, d.news_count)}">${d.avg_sentiment}</span></div>
                 </div>
             `)
 
@@ -76,7 +75,7 @@ function initGlobe() {
             .labelText("labelText")
             .labelSize(1.5)
             .labelDotRadius(0.3)
-            .labelColor(() => "#6B7280")
+            .labelColor(() => "#64748b")
             .labelResolution(3);
 
         globe.controls().autoRotate = true;
@@ -107,10 +106,10 @@ function initGlobe() {
 
 // Map sentiment float to hard terminal color hex
 function getTerminalColorCode(score, count) {
-    if (count === 0) return "#374151"; // Inactive
-    if (score <= -0.1) return "#FF2A2A"; // Bearish (Red)
-    if (score >= 0.1) return "#00FF55"; // Bullish (Green)
-    return "#AAAAAA"; // Neutral (Gray)
+    if (count === 0) return "#94a3b8"; // Inactive
+    if (score <= -0.1) return "#ef4444"; // Bearish
+    if (score >= 0.1) return "#10b981"; // Bullish
+    return "#64748b"; // Neutral
 }
 
 function getTerminalLabel(score, count) {
@@ -130,12 +129,12 @@ function showLoaderStatus() {
     const feed = document.getElementById("newsFeedList");
     if (feed) {
         feed.innerHTML = `
-            <div style="padding:15px; font-family:'Roboto Mono',monospace; font-size:0.75rem; color:#6B7280; line-height:1.6;">
-                <div style="color:#3B82F6">> SYS.CONNECTING [API_BASE]</div>
+            <div style="padding:15px; font-family:'Inter',sans-serif; font-size:0.8rem; color:#64748b; line-height:1.6;">
+                <div style="color:#3b82f6; font-weight:600;">> SYS.CONNECTING [API_BASE]</div>
                 <div>> AWAITING HANDSHAKE...</div>
-                <div style="color:#FF2A2A; margin-top:8px;">> WARN: RENDER COLD START DETECTED</div>
+                <div style="color:#ef4444; margin-top:8px; font-weight:600;">> WARN: RENDER COLD START DETECTED</div>
                 <div>> ESTIMATED WAKE TTL: 60s</div>
-                <div>> RETRY LOOP ENGAGED [15000ms] <span class="loader-cursor" style="display:inline-block;width:6px;height:10px;background:#3B82F6;"></span></div>
+                <div>> RETRY LOOP ENGAGED [15000ms] <span class="loader-cursor" style="display:inline-block;width:6px;height:10px;background:#3b82f6;"></span></div>
             </div>
         `;
     }
@@ -339,7 +338,7 @@ function renderFeedItems(news, filter) {
                     <span class="ticker-sentiment ${tag}">${tag}</span>
                     <span class="ticker-source">${n.source.toUpperCase().substr(0,10)}</span>
                     <span class="ticker-city">&lt;${n.city.substring(0,3).toUpperCase()}&gt;</span>
-                    <span class="ticker-city" style="color:#A78BFA;">[${n.sector.toUpperCase()}]</span>
+                    <span class="ticker-city" style="color:#8b5cf6;">[${n.sector.toUpperCase()}]</span>
                 </div>
                 <div class="ticker-headline">${n.title}</div>
             </a>

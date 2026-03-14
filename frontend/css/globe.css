@@ -1,28 +1,28 @@
 /* ═══════════════════════════════════════════════════
    globe.css — Institutional Terminal UI (V2)
-   Aesthetic: J.P. Morgan / Bloomberg Terminal
-   Stark, high-contrast, monospace, dense data.
+   Aesthetic: White & Blue Theme (Responsive)
    ═══════════════════════════════════════════════════ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Inter:wght@400;600;700;800&display=swap');
 
 :root {
-    --bg-base: #02040A;        /* Deep obsidian/black */
-    --panel-bg: #090E17;       /* Slightly lighter for panels */
-    --border-color: #1F2937;   /* Sharp subtle borders */
-    --text-main: #E2E8F0;
-    --text-muted: #6B7280;
+    --bg-base: #f8fafc;        /* Light canvas */
+    --panel-bg: rgba(255, 255, 255, 0.9); /* Translucent panels */
+    --border-color: #e2e8f0;   /* Clean borders */
+    --text-main: #0f172a;
+    --text-muted: #64748b;
     
     /* Terminal Signal Colors */
-    --signal-bearish: #FF2A2A; /* Stark Red */
-    --signal-bullish: #00FF55; /* Stark Green */
-    --signal-neutral: #AAAAAA; /* Muted Gray */
-    --signal-accent: #3B82F6;  /* Terminal Blue */
+    --signal-bearish: #ef4444; /* Red-500 */
+    --signal-bullish: #10b981; /* Emerald-500 */
+    --signal-neutral: #94a3b8; /* Slate-400 */
+    --signal-accent: #3b82f6;  /* Blue-500 */
 
     --font-mono: 'Roboto Mono', monospace;
     --font-sans: 'Inter', sans-serif;
+    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
 body {
@@ -34,28 +34,48 @@ body {
     width: 100vw;
 }
 
+/* Subtle animated gradient background for light theme */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 25%, #f1f5f9 50%, #dbeafe 75%, #f8fafc 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    z-index: -2;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
 /* ── Typography & Basics ── */
 .mono { font-family: var(--font-mono); }
-.text-bearish { color: var(--signal-bearish) !important; }
-.text-bullish { color: var(--signal-bullish) !important; }
-.text-neutral { color: var(--signal-neutral) !important; }
-.text-accent { color: var(--signal-accent) !important; }
+.text-bearish { color: var(--signal-bearish) !important; font-weight: 600; }
+.text-bullish { color: var(--signal-bullish) !important; font-weight: 600; }
+.text-neutral { color: var(--signal-neutral) !important; font-weight: 600; }
+.text-accent { color: var(--signal-accent) !important; font-weight: 600; }
 
 /* ── Panel Common ── */
 .terminal-panel {
     background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.5); /* Hard shadow, no blur */
+    box-shadow: var(--shadow-soft);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .panel-header {
-    background: #111827;
+    background: #f1f5f9;
     border-bottom: 1px solid var(--border-color);
-    padding: 6px 12px;
-    font-size: 0.65rem;
+    padding: 10px 16px;
+    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 1.5px;
-    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    color: var(--text-main);
     text-transform: uppercase;
     display: flex;
     justify-content: space-between;
@@ -65,74 +85,93 @@ body {
 /* ── Top Header / Command Bar ── */
 .command-bar {
     position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 40px;
+    top: 16px; left: 16px; right: 16px;
+    height: 54px;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
-    border-radius: 0;
+    padding: 0 20px;
 }
 
 .sys-title {
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #FFF;
-    letter-spacing: 1px;
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--signal-accent), #8b5cf6, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .cmd-btn {
-    background: transparent;
+    background: #ffffff;
     border: 1px solid var(--border-color);
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    padding: 4px 10px;
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
     cursor: pointer;
     text-decoration: none;
-    transition: all 0.1s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
-.cmd-btn:hover { background: #1F2937; color: #FFF; }
+.cmd-btn:hover { background: #f8fafc; border-color: var(--signal-accent); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 
 .status-indicator {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 700;
     color: var(--signal-bullish);
+    background: #ffffff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 .status-dot {
     width: 8px; height: 8px;
     background: var(--signal-bullish);
-    animation: blink 1s step-end infinite;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
 }
-@keyframes blink { 50% { opacity: 0; } }
+@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
 
 /* ── Main Layout ── */
 #globeViz {
     width: 100vw;
     height: 100vh;
     cursor: crosshair;
+    pointer-events: auto; /* Restores drag/scroll on desktop */
+}
+
+/* ── Layout Wrapper ── */
+.main-layout {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
 }
 
 /* ── Left Data Column ── */
 .left-column {
-    position: fixed;
-    top: 56px; left: 16px;
-    width: 280px; bottom: 40px;
-    z-index: 90;
+    pointer-events: auto;
+    position: absolute;
+    top: 86px; left: 16px; bottom: 50px;
+    width: 320px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    z-index: 90;
 }
 
 .risk-panel, .sector-panel {
-    background: var(--panel-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
     flex-shrink: 0;
 }
 
@@ -143,49 +182,53 @@ body {
 
 .risk-row {
     border-bottom: 1px solid var(--border-color);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
     display: flex;
     align-items: stretch;
+    transition: background 0.2s;
 }
-.risk-row:hover { background: #111827; }
+.risk-row:last-child { border-bottom: none; }
+.risk-row:hover { background: #f8fafc; }
 
 .risk-cell {
-    padding: 8px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
 }
 
-.risk-col-city { flex: 1; font-weight: 500; }
-.risk-col-score { width: 60px; justify-content: flex-end; font-weight: 700; }
-.risk-col-meter { width: 80px; padding: 0 8px; }
+.risk-col-city { flex: 1; font-weight: 600; color: var(--text-main); }
+.risk-col-score { width: 70px; justify-content: flex-end; font-weight: 700; }
+.risk-col-meter { width: 90px; padding: 0 12px; }
 
 .meter-bg {
     width: 100%; height: 6px;
-    background: #111827;
+    background: #e2e8f0;
+    border-radius: 3px;
     position: relative;
     overflow: hidden;
 }
 .meter-fill {
     height: 100%;
     position: absolute; left: 0; top: 0;
+    border-radius: 3px;
 }
 
 /* ── Right: Live Intelligence Feed ── */
 .feed-panel {
-    position: fixed;
-    top: 56px; right: 16px;
-    width: 380px;
-    bottom: 16px;
-    z-index: 90;
+    pointer-events: auto;
+    position: absolute;
+    top: 86px; right: 16px; bottom: 50px;
+    width: 400px;
     display: flex;
     flex-direction: column;
+    z-index: 90;
 }
 
 .feed-filters {
     display: flex;
     border-bottom: 1px solid var(--border-color);
-    background: var(--bg-base);
+    background: #ffffff;
 }
 .filter-btn {
     flex: 1;
@@ -193,73 +236,83 @@ body {
     border: none;
     border-right: 1px solid var(--border-color);
     color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    padding: 8px 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 10px 0;
     cursor: pointer;
+    transition: all 0.2s;
 }
 .filter-btn:last-child { border-right: none; }
-.filter-btn:hover { background: #111827; }
-.filter-btn.active { background: var(--border-color); color: #FFF; font-weight: 700; }
+.filter-btn:hover { background: #f8fafc; color: var(--text-main); }
+.filter-btn.active { background: #f1f5f9; color: var(--signal-accent); font-weight: 700; box-shadow: inset 0 -2px 0 var(--signal-accent); }
 
 .ticker-container {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .ticker-item {
-    padding: 10px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     text-decoration: none;
     cursor: pointer;
+    transition: background 0.2s;
 }
-.ticker-item:hover { background: #111827; }
+.ticker-item:hover { background: #ffffff; box-shadow: inset 2px 0 0 var(--signal-accent); }
 
 .ticker-meta {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 600;
 }
 
-.ticker-time { color: var(--text-muted); }
-.ticker-source { color: var(--signal-accent); }
+.ticker-time { color: var(--signal-accent); background: #dbeafe; padding: 2px 6px; border-radius: 4px; }
+.ticker-source { color: var(--text-muted); }
 .ticker-city { color: var(--text-main); }
 
 .ticker-sentiment {
-    padding: 1px 4px;
-    font-weight: 700;
+    padding: 2px 6px;
+    font-weight: 800;
+    border-radius: 4px;
+    color: #fff;
 }
-.ticker-sentiment.BEARISH { color: #000; background: var(--signal-bearish); }
-.ticker-sentiment.BULLISH { color: #000; background: var(--signal-bullish); }
-.ticker-sentiment.NEUTRAL { color: #000; background: var(--signal-neutral); }
+.ticker-sentiment.BEARISH { background: var(--signal-bearish); }
+.ticker-sentiment.BULLISH { background: var(--signal-bullish); }
+.ticker-sentiment.NEUTRAL { background: var(--signal-neutral); }
 
 .ticker-headline {
-    font-size: 0.8rem;
-    color: #D1D5DB;
-    line-height: 1.4;
-    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--text-main);
+    line-height: 1.5;
+    font-weight: 500;
 }
 
 /* ── Bottom: System Status Bar ── */
 .sys-footer {
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 30px;
-    background: var(--border-color);
+    height: 34px;
+    background: #ffffff;
+    border-top: 1px solid var(--border-color);
     z-index: 100;
     display: flex;
     align-items: center;
+    justify-content: center;
     padding: 0 16px;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: #9CA3AF;
-    gap: 20px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    gap: 24px;
 }
 
 /* ── Loading Overlay ── */
@@ -267,12 +320,15 @@ body {
     position: fixed;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    background: var(--bg-base);
-    border: 1px solid var(--signal-accent);
-    padding: 20px;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--signal-accent);
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    padding: 24px 32px;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
     z-index: 200;
     text-align: center;
     transition: opacity 0.5s;
@@ -280,14 +336,126 @@ body {
 .terminal-loader.hidden { opacity: 0; pointer-events: none; }
 .loader-cursor {
     display: inline-block;
-    width: 8px; height: 12px;
+    width: 6px; height: 12px;
     background: var(--signal-accent);
     animation: blink 1s step-end infinite;
     vertical-align: middle;
     margin-left: 4px;
 }
+@keyframes blink { 50% { opacity: 0; } }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: #374151; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Mobile Responsiveness (MAX-WIDTH 768px) ── */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .command-bar {
+        position: relative;
+        top: 0; left: 0; right: 0;
+        padding: 12px;
+        height: auto;
+        flex-direction: column;
+        gap: 12px;
+        border-radius: 0;
+        background: #f8fafc;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    .main-layout {
+        position: relative;
+        top: 0; left: 0; right: 0; bottom: auto;
+        width: 100%; height: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 16px;
+        pointer-events: auto;
+    }
+
+    /* Reset absolute positioning from desktop */
+    #globeViz, .left-column, .feed-panel {
+        position: relative;
+        top: auto; left: auto; right: auto; bottom: auto;
+        z-index: 1;
+    }
+
+    /* We need to separate Risk and Sector to slot the globe in between */
+    .left-column {
+        display: contents;
+    }
+
+    /* 1. Globe */
+    #globeViz {
+        width: 100% !important;
+        height: 380px !important;
+        overflow: hidden;
+        order: 1;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #globeViz canvas {
+        width: 100% !important;
+        height: 100% !important;
+        outline: none;
+    }
+
+    /* 2. Live Intelligence Feed panel */
+    .feed-panel {
+        width: 100%;
+        height: 400px;
+        max-height: 400px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        order: 2;
+    }
+
+    .feed-filters {
+        flex-shrink: 0; 
+        /* keeps the tabs pinned */
+    }
+
+    .ticker-container {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 3. Global Risk Analysis panel */
+    .risk-panel {
+        width: 100%;
+        order: 3;
+    }
+
+    /* 4. Sector Risk Matrix panel */
+    .sector-panel {
+        width: 100%;
+        order: 4;
+    }
+
+    .sys-footer {
+        display: none;
+    }
+
+    /* Readability: min 13px */
+    .panel-header { font-size: 13px; }
+    .risk-row { font-size: 13px; }
+    .filter-btn { font-size: 13px; }
+    .ticker-headline { font-size: 13px; line-height: 1.4; }
+    .ticker-meta { font-size: 13px; }
+    .sys-title { font-size: 14px; }
+}

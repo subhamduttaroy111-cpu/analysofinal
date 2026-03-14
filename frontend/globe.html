@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/globe.css">
+  <link rel="stylesheet" href="css/globe.css?v=6">
 </head>
 
 <body>
@@ -39,36 +39,39 @@
     </div>
 </header>
 
-<!-- ═══════════ 3D GLOBE TIE ═══════════ -->
-<div id="globeViz" aria-label="3D Sentiment Globe Terminal"></div>
+<!-- ═══════════ MAIN LAYOUT GRID ═══════════ -->
+<div class="main-layout">
+    <!-- ═══════════ 3D GLOBE TIE ═══════════ -->
+    <div id="globeViz" aria-label="3D Sentiment Globe Terminal"></div>
 
-<!-- ═══════════ LEFT COLUMN (REGIONAL / SECTOR RISK) ═══════════ -->
-<div class="left-column">
-    <div class="risk-panel terminal-panel">
-        <div class="panel-header">GLOBAL RISK ANALYSIS &lt;MACRO&gt;</div>
-        <div class="risk-table" id="cityList">
-            <!-- JS pops in rows here -->
+    <!-- ═══════════ LEFT COLUMN (REGIONAL / SECTOR RISK) ═══════════ -->
+    <div class="left-column">
+        <div class="risk-panel terminal-panel">
+            <div class="panel-header">GLOBAL RISK ANALYSIS &lt;MACRO&gt;</div>
+            <div class="risk-table" id="cityList">
+                <!-- JS pops in rows here -->
+            </div>
+        </div>
+
+        <div class="sector-panel terminal-panel">
+            <div class="panel-header">SECTOR RISK MATRIX &lt;IND&gt;</div>
+            <div class="risk-table" id="sectorList">
+                <!-- JS pops in rows here -->
+            </div>
         </div>
     </div>
 
-    <div class="sector-panel terminal-panel">
-        <div class="panel-header">SECTOR RISK MATRIX &lt;IND&gt;</div>
-        <div class="risk-table" id="sectorList">
-            <!-- JS pops in rows here -->
+    <!-- ═══════════ RIGHT: LIVE INTELLIGENCE ═══════════ -->
+    <div class="feed-panel terminal-panel">
+        <div class="panel-header">LIVE INTELLIGENCE FEED &lt;RSS&gt;</div>
+        <div class="feed-filters">
+            <button class="filter-btn active" data-filter="all" onclick="filterNews('all', this)">[ALL SCANS]</button>
+            <button class="filter-btn text-bearish" data-filter="bearish" onclick="filterNews('bearish', this)">[HIGH RISK]</button>
+            <button class="filter-btn text-bullish" data-filter="bullish" onclick="filterNews('bullish', this)">[BULLISH]</button>
         </div>
-    </div>
-</div>
-
-<!-- ═══════════ RIGHT: LIVE INTELLIGENCE ═══════════ -->
-<div class="feed-panel terminal-panel">
-    <div class="panel-header">LIVE INTELLIGENCE FEED &lt;RSS&gt;</div>
-    <div class="feed-filters">
-        <button class="filter-btn active" data-filter="all" onclick="filterNews('all', this)">[ALL SCANS]</button>
-        <button class="filter-btn text-bearish" data-filter="bearish" onclick="filterNews('bearish', this)">[HIGH RISK]</button>
-        <button class="filter-btn text-bullish" data-filter="bullish" onclick="filterNews('bullish', this)">[BULLISH]</button>
-    </div>
-    <div class="ticker-container" id="newsFeedList">
-        <!-- JS pops in ticker items here -->
+        <div class="ticker-container" id="newsFeedList">
+            <!-- JS pops in ticker items here -->
+        </div>
     </div>
 </div>
 
@@ -92,8 +95,8 @@
 </div>
 
 <!-- ═══════════ SCRIPTS ═══════════ -->
-<script src="js/config.js"></script>
-<script src="js/globe.js"></script>
+<script src="js/config.js?v=6"></script>
+<script src="js/globe.js?v=6"></script>
 
 </body>
 </html>

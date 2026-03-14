@@ -260,15 +260,20 @@ async function fetchAndDisplayMarketIndices() {
     if (!list) return;
 
     try {
-        const backendUrl = (typeof API_BASE !== "undefined" && API_BASE)
-            ? API_BASE
-            : "https://analysofinal-backend.onrender.com";
+        const backendUrl = typeof API_BASE !== "undefined" ? API_BASE : "https://analysofinal-backend.onrender.com";
 
-        const res = await fetch(`${backendUrl}/api/market-indices`);
-        if (!res.ok) throw new Error("Indices fetch failed");
-        const json = await res.json();
+        const res = await fetch(`${backendUrl}/api/market-indices`, {
+           headers: { 'Accept': 'application/json' }
+        });
         
-        if (json.status === "success" && json.data.length > 0) {
+        let json;
+        try {
+            json = await res.json();
+        } catch (je) {
+            throw new Error(`Parse failed: ${res.status} ${res.statusText}`);
+        }
+        
+        if (json.status === "success" && json.data && json.data.length > 0) {
             list.innerHTML = json.data.map(idx => {
                 const isBullish = idx.change >= 0;
                 const hex = isBullish ? "#10b981" : "#ef4444"; // match new theme css var manually

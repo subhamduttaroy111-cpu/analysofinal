@@ -46,7 +46,7 @@ function initGlobe() {
                 </div>
             `)
 
-            // Arcs (news flow) - High contrast laser lines
+            // Arcs (news flow) - High contrast laser pulses
             .arcsData([])
             .arcStartLat("startLat")
             .arcStartLng("startLng")
@@ -55,9 +55,19 @@ function initGlobe() {
             .arcColor("colors")
             .arcAltitude(0.15)
             .arcStroke(0.8)
-            .arcDashLength(0.4)
-            .arcDashGap(0.2)
-            .arcDashAnimateTime(1500)
+            .arcDashLength(0.15) // Short laser pulse
+            .arcDashGap(1.5)     // Large gap so it's a single pulse flying
+            .arcDashInitialGap(() => Math.random()) // Random start timing
+            .arcDashAnimateTime(2000) // Speed of the pulse
+
+            // Impact Rings (ripples when news hits a city)
+            .ringsData([])
+            .ringLat("lat")
+            .ringLng("lng")
+            .ringColor("color")
+            .ringMaxRadius(3)
+            .ringPropagationSpeed(1.5)
+            .ringRepeatPeriod(1000)
 
             // City Labels (Monospaced)
             .labelsData([])
@@ -228,7 +238,7 @@ function updateGlobeLayer(data) {
             startLng: src.lng + (Math.random() - 0.5) * 5,
             endLat: np.lat,
             endLng: np.lng,
-            colors: [hColor + "55", hColor], // Fade in source to destination
+            colors: [hColor + "00", hColor], // Transparent trail fading into solid head
         };
     });
 
@@ -238,9 +248,17 @@ function updateGlobeLayer(data) {
         labelText: h.name
     }));
 
+    // Generate ripples for the most active cities
+    const rings = data.hubs.filter(h => h.news_count > 0).map(h => ({
+        lat: h.lat,
+        lng: h.lng,
+        color: () => getTerminalColorCode(h.avg_sentiment, 1) + "AA"
+    }));
+
     globe.pointsData(points);
     globe.arcsData(arcs);
     globe.labelsData(labels);
+    globe.ringsData(rings);
 }
 
 // ── Risk Component ──────────────────────────────────────────

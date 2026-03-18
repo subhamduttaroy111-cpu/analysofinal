@@ -45,6 +45,18 @@ def home():
 def login_page():
     return app.send_static_file("login.html")
 
+@app.route("/globe.html")
+def globe_page():
+    return app.send_static_file("globe.html")
+
+@app.route("/robots.txt")
+def robots():
+    return app.send_static_file("robots.txt")
+
+@app.route("/sitemap.xml")
+def sitemap():
+    return app.send_static_file("sitemap.xml")
+
 register_routes(app)
 
 # ── Local entry point ────────────────────────────────────────

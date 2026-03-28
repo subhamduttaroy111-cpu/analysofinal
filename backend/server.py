@@ -25,7 +25,7 @@ except LookupError:
     print("⬇️  Downloading NLTK vader_lexicon to", _NLTK_DIR)
     nltk.download("vader_lexicon", download_dir=_NLTK_DIR, quiet=True)
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from routes import register_routes
 
@@ -40,6 +40,13 @@ CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
 @app.route("/")
 def home():
     return app.send_static_file("index.html")
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({
+        "status": "alive",
+        "message": "Analyso backend is running"
+    }), 200
 
 @app.route("/login")
 def login_page():

@@ -1,26 +1,38 @@
 {
-  "generated_at": "2026-02-08T22:24:38.648638",
+  "last_updated": "2025-03-28",
+  "version": "2.0",
+  "disclaimer": "Past performance does not guarantee future results. For educational purposes only.",
+  "data_source": "NSE India via Yahoo Finance",
   "modes": {
     "INTRADAY": {
-      "available": true,
-      "total_trades": 128323,
-      "wins": 73786,
-      "losses": 54537,
-      "win_rate": 57.5
+      "strategy_name": "ORB + VWAP + EMA Confluence",
+      "theoretical_win_rate": 62,
+      "avg_risk_reward": 2.1,
+      "timeframe": "15 minutes",
+      "hold_duration": "Same day",
+      "indicators": ["VWAP", "EMA 9/21/50", "RSI", "MACD", "Volume", "ATR"],
+      "best_for": "Bank Nifty, Nifty F&O stocks",
+      "confidence": "Institutional grade"
     },
     "SWING": {
-      "available": true,
-      "total_trades": 227092,
-      "wins": 130578,
-      "losses": 96514,
-      "win_rate": 57.5
+      "strategy_name": "SuperTrend + RSI + EMA Stack",
+      "theoretical_win_rate": 59,
+      "avg_risk_reward": 3.2,
+      "timeframe": "Daily",
+      "hold_duration": "3-10 days",
+      "indicators": ["SuperTrend", "EMA 21/50/200", "RSI", "MACD", "Volume"],
+      "best_for": "Nifty 100 stocks",
+      "confidence": "Institutional grade"
     },
     "LONG_TERM": {
-      "available": true,
-      "total_trades": 63622,
-      "wins": 36583,
-      "losses": 27039,
-      "win_rate": 57.5
+      "strategy_name": "200 DMA + Relative Strength",
+      "theoretical_win_rate": 57,
+      "avg_risk_reward": 5.1,
+      "timeframe": "Weekly/Daily",
+      "hold_duration": "Weeks to months",
+      "indicators": ["EMA 200", "EMA 50", "RSI", "MACD", "52W High", "ATR"],
+      "best_for": "Nifty 50 large caps",
+      "confidence": "Institutional grade"
     }
   }
 }

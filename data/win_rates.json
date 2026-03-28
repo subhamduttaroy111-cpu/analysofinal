@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-03-28",
+  "last_updated": "2026-03-28",
   "version": "2.0",
   "disclaimer": "Past performance does not guarantee future results. For educational purposes only.",
   "data_source": "NSE India via Yahoo Finance",
@@ -16,7 +16,7 @@
     },
     "SWING": {
       "strategy_name": "SuperTrend + RSI + EMA Stack",
-      "theoretical_win_rate": 59,
+      "theoretical_win_rate": 63,
       "avg_risk_reward": 3.2,
       "timeframe": "Daily",
       "hold_duration": "3-10 days",
@@ -26,7 +26,7 @@
     },
     "LONG_TERM": {
       "strategy_name": "200 DMA + Relative Strength",
-      "theoretical_win_rate": 57,
+      "theoretical_win_rate": 63,
       "avg_risk_reward": 5.1,
       "timeframe": "Weekly/Daily",
       "hold_duration": "Weeks to months",

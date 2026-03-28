@@ -218,6 +218,32 @@ def swing_logic(df):
         score -= 8
         reasons.append(f"⚠ RSI weak ({last['RSI']:.1f})")
 
+    # ===== RSI DIVERGENCE CHECK (filters false breakouts) =====
+    # If price making higher highs but RSI making lower highs
+    # = Hidden bearish divergence = reduce score significantly
+    try:
+        if len(df) >= 5:
+            price_higher_high = (last['Close'] > df['Close'].iloc[-3] and
+                                df['Close'].iloc[-3] > df['Close'].iloc[-5])
+            rsi_lower_high = (last['RSI'] < df['RSI'].iloc[-3] and
+                             df['RSI'].iloc[-3] < df['RSI'].iloc[-5])
+            
+            if price_higher_high and rsi_lower_high:
+                score -= 18
+                reasons.append(
+                    "⚠ BEARISH DIVERGENCE: Price rising but RSI falling "
+                    "- hidden weakness, reduce position size"
+                )
+            elif not price_higher_high and not rsi_lower_high:
+                # Bullish confirmation - both price and RSI rising together
+                score += 8
+                reasons.append(
+                    "✓ RSI CONFIRMATION: Price and RSI rising together "
+                    "- healthy momentum"
+                )
+    except Exception:
+        pass  # Skip divergence check if insufficient data
+
     # ===== MACD FILTER =====
     macd_bullish_above_zero = last['MACD'] > last['MACD_Signal'] and last['MACD'] > 0
     if macd_bullish_above_zero:
@@ -231,6 +257,30 @@ def swing_logic(df):
     if 'MACD_Hist_Rising' in df.columns and last['MACD_Hist_Rising']:
         score += 8
         reasons.append("✓ MACD histogram rising 3 candles (momentum accelerating)")
+
+    # ===== CONSECUTIVE CANDLE CONFIRMATION =====
+    # Price must close above EMA_21 for at least 2 consecutive candles
+    # Filters out single-candle false breakouts
+    try:
+        if len(df) >= 3:
+            consecutive_above_ema21 = (
+                df['Close'].iloc[-1] > df['EMA_21'].iloc[-1] and
+                df['Close'].iloc[-2] > df['EMA_21'].iloc[-2]
+            )
+            if consecutive_above_ema21:
+                score += 10
+                reasons.append(
+                    "✓ CONFIRMED: Price above 21 EMA for 2+ candles "
+                    "- breakout is genuine"
+                )
+            else:
+                score -= 8
+                reasons.append(
+                    "⚠ Price not consistently above 21 EMA "
+                    "- wait for confirmation"
+                )
+    except Exception:
+        pass
 
     # ===== VOLUME CONFIRMATION =====
     if last['Volume_Ratio'] > 2.0:
@@ -273,7 +323,7 @@ def swing_logic(df):
     reasons.append(f"📊 Signal Quality: {signal_quality} | {confidence_label} ({confidence_pct:.0f}%)")
 
     # ===== BIAS DETERMINATION =====
-    if score >= 75 and ema_full_stack and supertrend_bullish:
+    if score >= 78 and ema_full_stack and supertrend_bullish:
         bias = "BULLISH"
     elif score >= 60:
         bias = "NEUTRAL"
@@ -298,7 +348,7 @@ def swing_logic(df):
 
     return score, bias, reasons, sl, tgt, rr_ratio
 
-def longterm_logic(df):
+def longterm_logic(df, pe_ratio=None, market_cap=None):
     """
     Institutional Long-Term Strategy: 200 DMA + Relative Strength
     Estimated accuracy: 55-65% on NSE weekly/daily data
@@ -326,6 +376,56 @@ def longterm_logic(df):
     else:
         score -= 25
         reasons.append("⚠ CRITICAL: Below 200 EMA - avoid long positions")
+
+    # ===== FUNDAMENTAL FILTER (PE + Market Cap) =====
+    # Avoid fundamentally broken stocks even if technically bullish
+    if pe_ratio is not None:
+        try:
+            pe = float(pe_ratio)
+            if 5 <= pe <= 80:
+                score += 10
+                reasons.append(
+                    f"✓ PE ratio healthy ({pe:.1f}x) "
+                    "- fundamentally sound"
+                )
+            elif pe > 80:
+                score -= 12
+                reasons.append(
+                    f"⚠ PE ratio very high ({pe:.1f}x) "
+                    "- overvalued risk"
+                )
+            elif pe < 0:
+                score -= 15
+                reasons.append(
+                    f"⚠ Negative PE ({pe:.1f}x) "
+                    "- company losing money"
+                )
+        except (ValueError, TypeError):
+            pass
+
+    if market_cap is not None:
+        try:
+            mcap_crore = float(market_cap) / 1e7  # Convert to crore
+            if mcap_crore >= 20000:
+                score += 8
+                reasons.append(
+                    f"✓ Large cap (₹{mcap_crore:,.0f} Cr) "
+                    "- institutional grade stock"
+                )
+            elif mcap_crore >= 5000:
+                score += 4
+                reasons.append(
+                    f"✓ Mid cap (₹{mcap_crore:,.0f} Cr) "
+                    "- acceptable for long term"
+                )
+            elif mcap_crore < 1000:
+                score -= 10
+                reasons.append(
+                    f"⚠ Small cap (₹{mcap_crore:,.0f} Cr) "
+                    "- high risk for long term"
+                )
+        except (ValueError, TypeError):
+            pass
 
     # ===== 50 EMA vs 200 EMA (Golden Cross) =====
     if last['EMA_50'] > last['EMA_200']:
@@ -360,6 +460,42 @@ def longterm_logic(df):
         score += 6
         reasons.append("→ MACD crossover (momentum building)")
 
+    # ===== LONG-TERM TREND STRENGTH =====
+    # Check if uptrend is sustained over last 50 candles
+    try:
+        if len(df) >= 50:
+            price_50_ago = df['Close'].iloc[-50]
+            current_price = last['Close']
+            trend_strength_pct = ((current_price - price_50_ago) 
+                                  / price_50_ago) * 100
+            
+            if trend_strength_pct > 15:
+                score += 12
+                reasons.append(
+                    f"✓ STRONG UPTREND: +{trend_strength_pct:.1f}% "
+                    "over 50 candles - sustained momentum"
+                )
+            elif trend_strength_pct > 5:
+                score += 6
+                reasons.append(
+                    f"✓ Moderate uptrend: +{trend_strength_pct:.1f}% "
+                    "over 50 candles"
+                )
+            elif trend_strength_pct < -10:
+                score -= 12
+                reasons.append(
+                    f"⚠ DOWNTREND: {trend_strength_pct:.1f}% "
+                    "over 50 candles - avoid long positions"
+                )
+            elif trend_strength_pct < 0:
+                score -= 5
+                reasons.append(
+                    f"⚠ Weak trend: {trend_strength_pct:.1f}% "
+                    "over 50 candles"
+                )
+    except Exception:
+        pass
+
     # ===== VOLUME CONFIRMATION =====
     if last['Volume_Ratio'] > 1.5:
         score += 12
@@ -387,6 +523,42 @@ def longterm_logic(df):
         elif pct_from_high > 40:
             score -= 5
             reasons.append(f"⚠ Far from 52-week high ({pct_from_high:.1f}%) - weak momentum")
+
+    # ===== 200 EMA SLOPE CHECK =====
+    # Rising 200 EMA = healthy long-term uptrend
+    # Flat or falling 200 EMA = avoid even if price is above it
+    try:
+        if len(df) >= 10:
+            ema200_now = last['EMA_200']
+            ema200_10_ago = df['EMA_200'].iloc[-10]
+            ema200_slope = ((ema200_now - ema200_10_ago) 
+                            / ema200_10_ago) * 100
+            
+            if ema200_slope > 0.5:
+                score += 12
+                reasons.append(
+                    f"✓ 200 EMA RISING (+{ema200_slope:.2f}%) "
+                    "- strong long-term uptrend"
+                )
+            elif ema200_slope > 0:
+                score += 5
+                reasons.append(
+                    f"✓ 200 EMA slightly rising (+{ema200_slope:.2f}%)"
+                )
+            elif ema200_slope < -0.5:
+                score -= 15
+                reasons.append(
+                    f"⚠ CRITICAL: 200 EMA FALLING ({ema200_slope:.2f}%) "
+                    "- long-term downtrend, avoid!"
+                )
+            else:
+                score -= 5
+                reasons.append(
+                    f"→ 200 EMA flat ({ema200_slope:.2f}%) "
+                    "- no clear long-term trend"
+                )
+    except Exception:
+        pass
 
     # ===== CONFIDENCE SCORE =====
     score = max(0, min(100, score))

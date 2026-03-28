@@ -134,7 +134,19 @@ def register_routes(app):
                     elif mode == "SWING":
                         score, bias, reasons, sl, tgt, rr = swing_logic(df)
                     else:
-                        score, bias, reasons, sl, tgt, rr = longterm_logic(df)
+                        # Get fundamental data for long-term filter
+                        try:
+                            ticker_info = yf.Ticker(s).info
+                            pe_ratio = ticker_info.get('trailingPE', None)
+                            market_cap = ticker_info.get('marketCap', None)
+                        except Exception:
+                            pe_ratio = None
+                            market_cap = None
+                        score, bias, reasons, sl, tgt, rr = longterm_logic(
+                            df, 
+                            pe_ratio=pe_ratio, 
+                            market_cap=market_cap
+                        )
 
                 current_price = round(float(df['Close'].iloc[-1]), 2)
 

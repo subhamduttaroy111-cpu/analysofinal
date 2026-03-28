@@ -42,7 +42,7 @@ MODE_CONFIG = {
         "min_data_points": 50
     },
     "LONG_TERM": {
-        "period": "2y",
+        "period": "3y",
         "interval": "1d",
         "min_data_points": 150
     }

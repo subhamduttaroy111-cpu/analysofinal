@@ -40,6 +40,11 @@ async function runScan() {
             STOCKS = json.data;
             WIN_RATE = json.win_rate;
             renderCards(STOCKS);
+
+            // Apply guest mode blur/lock if not logged in
+            if (window.isGuestMode && typeof window.applyGuestLock === 'function') {
+                window.applyGuestLock();
+            }
         }
     } catch (error) {
         if (typeof stopLoadingAnimation === 'function') {
@@ -145,6 +150,12 @@ function renderCards(data) {
 }
 
 async function openModal(i) {
+    // Guest mode: show login modal instead of stock details
+    if (window.isGuestMode) {
+        if (typeof window.showLoginModal === 'function') window.showLoginModal();
+        return;
+    }
+
     const s = STOCKS[i];
     const modal = document.getElementById("modal");
     const mTitle = document.getElementById("mTitle");
@@ -333,3 +344,45 @@ async function viewStockNews() {
     }
 }
 
+// ============== GUEST MODE LOCK/UNLOCK ==============
+
+/**
+ * Apply blur + lock overlay to all stock cards (Guest Mode)
+ * Called by firebase-config.js when user is not logged in
+ */
+window.applyGuestLock = function () {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        if (card.classList.contains('card-locked')) return;
+        card.classList.add('card-locked');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'card-lock-overlay';
+        overlay.innerHTML = `
+            <span class="lock-icon">🔒</span>
+            <span class="lock-text">Login to unlock full intraday, swing & long-term signals 📊</span>
+            <span class="lock-cta">Sign In to Unlock</span>
+        `;
+        overlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof window.showLoginModal === 'function') window.showLoginModal();
+        });
+        card.appendChild(overlay);
+    });
+};
+
+/**
+ * Remove blur + lock overlay from all stock cards (after login)
+ * Called by firebase-config.js when user logs in
+ */
+window.removeGuestLock = function () {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.classList.remove('card-locked');
+        const overlay = card.querySelector('.card-lock-overlay');
+        if (overlay) overlay.remove();
+    });
+
+    const guestBanner = document.getElementById('guestBanner');
+    if (guestBanner) guestBanner.style.display = 'none';
+};

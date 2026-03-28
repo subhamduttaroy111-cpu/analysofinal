@@ -1,8 +1,11 @@
 /**
- * firebase-config.js — Email + Password Login
- * ─────────────────────────────────────────
+ * firebase-config.js — Email + Password Login (Modal-Based)
+ * ─────────────────────────────────────────────────────────
  * Saves user data to Firebase Realtime Database.
  * Uses Firebase Auth for secure session tracking.
+ * 
+ * NEW: Uses inline login modal on index.html instead of
+ * redirecting to login.html. Supports Guest Mode.
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -24,74 +27,90 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ── UI Toggle Logic (Segmented Tabs) ─────────────────────────
-let isSignupMode = false;
-const loginBtn = document.getElementById("loginBtn");
-const authTabs = document.getElementById("authTabs");
-const tabLogin = document.getElementById("tabLogin");
-const tabSignup = document.getElementById("tabSignup");
-const errorDiv = document.getElementById("loginError");
-const phoneGroup = document.getElementById("phoneGroup"); // Added for phone number field
+// ── Guest Mode Flag ──────────────────────────────────────────
+window.isGuestMode = true;
 
-window.setAuthMode = function (signupActive) {
-    isSignupMode = signupActive;
+// ── Login Modal: Show / Hide / Tab Toggle ────────────────────
+window.showLoginModal = function () {
+    const overlay = document.getElementById("loginModalOverlay");
+    if (overlay) overlay.style.display = "flex";
+};
 
-    // Clear any previous errors when switching tabs
-    if (errorDiv) {
-        errorDiv.style.display = "none";
-        errorDiv.textContent = "";
-    }
+window.closeLoginModal = function () {
+    const overlay = document.getElementById("loginModalOverlay");
+    if (overlay) overlay.style.display = "none";
 
-    if (isSignupMode) {
-        // Switch to Create Account mode
-        if (authTabs) authTabs.setAttribute("data-mode", "signup");
+    // Enter Guest Mode
+    window.isGuestMode = true;
+    const guestBanner = document.getElementById("guestBanner");
+    if (guestBanner) guestBanner.style.display = "flex";
+
+    // Apply blur/lock to any already-rendered cards
+    if (typeof window.applyGuestLock === "function") window.applyGuestLock();
+};
+
+let isModalSignup = false;
+
+window.setLoginModalMode = function (signupActive) {
+    isModalSignup = signupActive;
+
+    const tabs = document.getElementById("loginModalTabs");
+    const tabLogin = document.getElementById("lmTabLogin");
+    const tabSignup = document.getElementById("lmTabSignup");
+    const submitBtn = document.getElementById("lmSubmitBtn");
+    const phoneGroup = document.getElementById("lmPhoneGroup");
+    const errorDiv = document.getElementById("lmError");
+
+    if (errorDiv) { errorDiv.style.display = "none"; errorDiv.textContent = ""; }
+
+    if (signupActive) {
+        if (tabs) tabs.setAttribute("data-mode", "signup");
         if (tabSignup) tabSignup.classList.add("active");
         if (tabLogin) tabLogin.classList.remove("active");
-        if (loginBtn) loginBtn.innerHTML = "🚀 Create Account";
-        if (phoneGroup) phoneGroup.style.display = "block"; // Show phone field
+        if (submitBtn) submitBtn.innerHTML = "🚀 Create Account";
+        if (phoneGroup) phoneGroup.style.display = "block";
     } else {
-        // Switch to Sign In mode
-        if (authTabs) authTabs.setAttribute("data-mode", "login");
+        if (tabs) tabs.setAttribute("data-mode", "login");
         if (tabLogin) tabLogin.classList.add("active");
         if (tabSignup) tabSignup.classList.remove("active");
-        if (loginBtn) loginBtn.innerHTML = "🚀 Sign In";
-        if (phoneGroup) phoneGroup.style.display = "none"; // Hide phone field
+        if (submitBtn) submitBtn.innerHTML = "🚀 Sign In";
+        if (phoneGroup) phoneGroup.style.display = "none";
     }
 };
 
-// ── Login / Signup Handler ───────────────────────────────────
-const loginForm = document.getElementById("loginForm");
-if (loginForm) {
-    loginForm.addEventListener("submit", async function (event) {
+// ── ALSO keep the old login.html page working ────────────────
+// (setAuthMode is used on login.html — keep it functional)
+window.setAuthMode = window.setLoginModalMode;
+
+// ── Login Modal Form Handler ─────────────────────────────────
+const loginModalForm = document.getElementById("loginModalForm");
+if (loginModalForm) {
+    loginModalForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
-        const emailInput = document.getElementById("emailInput");
-        const passwordInput = document.getElementById("passwordInput");
-        const phoneInput = document.getElementById("phoneInput"); // Get phone input
-        const errorDiv = document.getElementById("loginError");
-
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-        const phone = phoneInput ? phoneInput.value.trim() : ""; // Extract phone
+        const email = document.getElementById("lmEmail").value.trim();
+        const password = document.getElementById("lmPassword").value.trim();
+        const phoneInput = document.getElementById("lmPhone");
+        const phone = phoneInput ? phoneInput.value.trim() : "";
+        const errorDiv = document.getElementById("lmError");
+        const submitBtn = document.getElementById("lmSubmitBtn");
 
         if (errorDiv) errorDiv.style.display = "none";
-        if (loginBtn) {
-            loginBtn.disabled = true;
-            loginBtn.textContent = "⏳ Processing...";
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "⏳ Processing...";
         }
 
         try {
-            if (isSignupMode) {
+            if (isModalSignup) {
                 // SIGNUP
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-
-                // Save to Firestore using setDoc()
                 const timestamp = new Date().toISOString();
                 try {
                     await setDoc(doc(db, "users", user.uid), {
                         email: user.email,
-                        phone: phone, // Save captured phone number
+                        phone: phone,
                         uid: user.uid,
                         createdAt: timestamp,
                         lastLogin: timestamp
@@ -100,13 +119,10 @@ if (loginForm) {
                     console.error("Database save error:", dbErr);
                     throw new Error("Account created, but Database write failed: " + dbErr.message);
                 }
-
             } else {
                 // SIGNIN
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-
-                // Save last login to Firestore using updateDoc()
                 const timestamp = new Date().toISOString();
                 try {
                     await updateDoc(doc(db, "users", user.uid), {
@@ -118,7 +134,78 @@ if (loginForm) {
                 }
             }
 
-            // Redirect to main app ONLY IF DATABASE WROTE SUCCESSFULLY
+            // Success — onAuthStateChanged will handle UI update
+
+        } catch (err) {
+            console.error("Auth error:", err);
+            let errMsg = err.message;
+            if (err.code === "auth/email-already-in-use") errMsg = "Email is already in use.";
+            if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") errMsg = "Incorrect email or password.";
+            if (err.code === "auth/user-not-found") errMsg = "No account found with this email.";
+
+            if (errorDiv) {
+                errorDiv.textContent = errMsg;
+                errorDiv.style.display = "block";
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = isModalSignup ? "🚀 Create Account" : "🚀 Sign In";
+            }
+        }
+    });
+}
+
+// ── Also handle the OLD login.html form (if on that page) ────
+const oldLoginForm = document.getElementById("loginForm");
+if (oldLoginForm && !document.getElementById("loginModalForm")) {
+    oldLoginForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const email = document.getElementById("emailInput").value.trim();
+        const password = document.getElementById("passwordInput").value.trim();
+        const phoneInput = document.getElementById("phoneInput");
+        const phone = phoneInput ? phoneInput.value.trim() : "";
+        const errorDiv = document.getElementById("loginError");
+        const loginBtn = document.getElementById("loginBtn");
+
+        if (errorDiv) errorDiv.style.display = "none";
+        if (loginBtn) {
+            loginBtn.disabled = true;
+            loginBtn.textContent = "⏳ Processing...";
+        }
+
+        try {
+            if (isModalSignup) {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                const timestamp = new Date().toISOString();
+                try {
+                    await setDoc(doc(db, "users", user.uid), {
+                        email: user.email,
+                        phone: phone,
+                        uid: user.uid,
+                        createdAt: timestamp,
+                        lastLogin: timestamp
+                    });
+                } catch (dbErr) {
+                    console.error("Database save error:", dbErr);
+                    throw new Error("Account created, but Database write failed: " + dbErr.message);
+                }
+            } else {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                const timestamp = new Date().toISOString();
+                try {
+                    await updateDoc(doc(db, "users", user.uid), {
+                        lastLogin: timestamp
+                    });
+                } catch (dbErr) {
+                    console.error("Database update error:", dbErr);
+                    throw new Error("Logged in, but Database update failed: " + dbErr.message);
+                }
+            }
+
+            // Redirect to main app from login.html
             window.location.href = "index.html";
 
         } catch (err) {
@@ -134,7 +221,7 @@ if (loginForm) {
             }
             if (loginBtn) {
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = isSignupMode ? "🚀 Create Account" : "🚀 Sign In";
+                loginBtn.innerHTML = isModalSignup ? "🚀 Create Account" : "🚀 Sign In";
             }
         }
     });
@@ -147,10 +234,18 @@ onAuthStateChanged(auth, (user) => {
 
     if (user) {
         // User IS logged in
+        window.isGuestMode = false;
+
         if (isLoginPage) {
             window.location.href = "index.html";
             return;
         }
+
+        // Hide login modal & guest banner
+        const loginModal = document.getElementById("loginModalOverlay");
+        const guestBanner = document.getElementById("guestBanner");
+        if (loginModal) loginModal.style.display = "none";
+        if (guestBanner) guestBanner.style.display = "none";
 
         // Set local storage for backward compatibility with auth.js
         const displayName = user.email.split('@')[0];
@@ -169,13 +264,24 @@ onAuthStateChanged(auth, (user) => {
         if (userInitial) userInitial.textContent = displayName.charAt(0).toUpperCase();
         if (userProfile) userProfile.style.display = "flex";
 
+        // Remove locks from any cards
+        if (typeof window.removeGuestLock === "function") window.removeGuestLock();
+
         // Show educational disclaimer once per session
         if (typeof window.showDisclaimer === "function") window.showDisclaimer();
 
     } else {
         // User is NOT logged in
+        window.isGuestMode = true;
         localStorage.removeItem("analyso_user");
-        if (!isLoginPage) window.location.href = "login.html";
+
+        if (isLoginPage) {
+            // On login.html page — do nothing, let them use it
+            return;
+        }
+
+        // On index.html — show the login modal (guest can close it)
+        showLoginModal();
     }
 });
 
@@ -183,7 +289,19 @@ onAuthStateChanged(auth, (user) => {
 window.analysoLogout = function () {
     signOut(auth).then(() => {
         localStorage.removeItem("analyso_user");
-        window.location.href = "login.html";
+        window.isGuestMode = true;
+
+        // Hide profile, show modal
+        const userProfile = document.getElementById("userProfile");
+        if (userProfile) userProfile.style.display = "none";
+
+        showLoginModal();
+
+        // Reapply locks
+        if (typeof window.applyGuestLock === "function") window.applyGuestLock();
+
+        const guestBanner = document.getElementById("guestBanner");
+        if (guestBanner) guestBanner.style.display = "flex";
     }).catch((error) => {
         console.error("Logout error", error);
     });

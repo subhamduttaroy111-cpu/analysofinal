@@ -3,6 +3,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * This module checks the login state on index.html and updates the UI.
  * The actual login/save logic lives in firebase-config.js.
+ *
+ * NEW: No longer redirects to login.html. Instead, sets guest mode
+ * and lets firebase-config.js handle showing the login modal.
  */
 
 // DOM Elements
@@ -18,12 +21,16 @@ if (logoutBtn) {
             window.analysoLogout();
         } else {
             localStorage.removeItem("analyso_user");
-            window.location.href = "login.html";
+            window.isGuestMode = true;
+            // Show login modal instead of redirecting
+            if (typeof window.showLoginModal === 'function') {
+                window.showLoginModal();
+            }
         }
     });
 }
 
-// Auth State Check
+// Auth State Check (lightweight — firebase-config.js handles the heavy lifting)
 (function checkAuth() {
     const isLoginPage = window.location.pathname.includes("login.html");
     const isIndexPage = window.location.pathname.includes("index.html") || window.location.pathname.endsWith("/");
@@ -42,10 +49,11 @@ if (logoutBtn) {
         if (userProfile) userProfile.style.display = "flex";
         if (logoutBtn) logoutBtn.style.display = "block";
 
+        window.isGuestMode = false;
+
     } else {
-        // User is not logged in
-        if (isIndexPage) {
-            window.location.href = "login.html";
-        }
+        // User is not logged in — enter Guest Mode (no redirect)
+        window.isGuestMode = true;
+        // firebase-config.js will show the login modal via onAuthStateChanged
     }
 })();

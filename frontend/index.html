@@ -541,6 +541,82 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     LOGIN MODAL OVERLAY (replaces hard-redirect to login.html)
+     Shown to unauthenticated users on page load.
+     Can be closed to enter Guest Mode with limited access.
+═══════════════════════════════════════════════════════════════ -->
+<div id="loginModalOverlay" class="login-modal-overlay" style="display:none;">
+  <div class="login-modal">
+
+    <!-- Close Button -->
+    <button class="login-modal-close" onclick="closeLoginModal()" aria-label="Close login and explore as guest">✕</button>
+
+    <!-- Brand -->
+    <div class="login-modal-brand">
+      <span class="login-modal-logo">ANALYSO</span>
+      <p class="login-modal-tagline">AI-POWERED STOCK SCANNER</p>
+    </div>
+
+    <!-- Heading -->
+    <h2 class="login-modal-title">Welcome 👋</h2>
+    <p class="login-modal-subtitle">
+      Sign in to unlock full AI-powered stock analysis for <strong>NSE &amp; BSE</strong>
+    </p>
+
+    <!-- Trust Badges -->
+    <div class="login-modal-trust">
+      <span>👥 200+ users joined</span>
+      <span>🤖 AI-powered NSE &amp; BSE</span>
+    </div>
+
+    <!-- Segmented Auth Tabs -->
+    <div class="login-modal-tabs" id="loginModalTabs" data-mode="login">
+      <div class="lm-tab-slider"></div>
+      <div class="lm-tab active" id="lmTabLogin" onclick="setLoginModalMode(false)">Sign In</div>
+      <div class="lm-tab" id="lmTabSignup" onclick="setLoginModalMode(true)">Create Account</div>
+    </div>
+
+    <!-- Form -->
+    <form class="login-modal-form" id="loginModalForm">
+      <div class="lm-input-group">
+        <label for="lmEmail">Email Address</label>
+        <input type="email" id="lmEmail" placeholder="e.g. trader@example.com" required autocomplete="email">
+      </div>
+      <div class="lm-input-group lm-phone-group" id="lmPhoneGroup" style="display:none;">
+        <label for="lmPhone">Phone Number <span style="font-weight:400;color:#94a3b8;font-size:0.75rem;">(Optional)</span></label>
+        <input type="tel" id="lmPhone" placeholder="e.g. +91 9876543210" autocomplete="tel">
+      </div>
+      <div class="lm-input-group">
+        <label for="lmPassword">Password</label>
+        <input type="password" id="lmPassword" placeholder="Min. 6 characters" required minlength="6" autocomplete="current-password">
+      </div>
+      <div class="lm-error" id="lmError"></div>
+      <button type="submit" class="lm-submit-btn" id="lmSubmitBtn">🚀 Sign In</button>
+    </form>
+
+    <!-- Explore First / Guest Button -->
+    <button class="lm-guest-btn" onclick="closeLoginModal()">
+      Explore First →
+    </button>
+
+    <!-- Educational Note -->
+    <p class="lm-edu-note">
+      📚 <strong>Educational Platform Only</strong> — Analyso provides stock analysis for educational purposes only and does not constitute investment advice.
+    </p>
+
+  </div>
+</div>
+<!-- /login-modal -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GUEST MODE BANNER — shown when user is in guest mode
+═══════════════════════════════════════════════════════════════ -->
+<div id="guestBanner" class="guest-banner" style="display:none;">
+  <span>🔒 You're in Guest Mode — results are limited</span>
+  <button onclick="showLoginModal()">Sign In to Unlock</button>
+</div>
+
 <script src="js/config.js"></script>
 <script type="module" src="js/firebase-config.js"></script>
 <script src="js/loader-animation.js"></script>

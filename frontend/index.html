@@ -329,6 +329,7 @@
     <h1 aria-label="Analyso – Free Indian Stock Scanner for NSE and BSE">ANALYSO <span>AI Stock Scanner</span></h1>
     <div style="display:flex; align-items:center; gap:16px;">
         <div class="header-badge">NSE/BSE Live (9:15am – 3:30pm IST)</div>
+        <a href="performance.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.15));border:1px solid rgba(99,102,241,0.3);color:#a5b4fc;font-size:0.82rem;font-weight:600;text-decoration:none;transition:all 0.3s ease;" onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,0.3),rgba(168,85,247,0.3))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.15))'">📊 Performance</a>
         <a href="globe.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.15));border:1px solid rgba(99,102,241,0.3);color:#a5b4fc;font-size:0.82rem;font-weight:600;text-decoration:none;transition:all 0.3s ease;" onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,0.3),rgba(168,85,247,0.3))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.15))'">🌍 News Globe</a>
         <div id="userProfile" class="user-profile" style="display:none;">
             <span id="userInitial" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:700;font-size:0.95rem;flex-shrink:0;">U</span>
@@ -617,12 +618,12 @@
   <button onclick="showLoginModal()">Sign In to Unlock</button>
 </div>
 
-<script src="js/config.js"></script>
-<script type="module" src="js/firebase-config.js"></script>
-<script src="js/loader-animation.js"></script>
-<script src="js/script.js"></script>
+<script src="js/config.js" defer></script>
+<script type="module" src="js/firebase-config.js" defer></script>
+<script src="js/loader-animation.js" defer></script>
+<script src="js/script.js" defer></script>
 <!-- Disclaimer popup — must load after DOM is ready -->
-<script src="js/disclaimer.js"></script>
+<script src="js/disclaimer.js" defer></script>
 
 <footer class="site-footer" role="contentinfo">
 

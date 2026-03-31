@@ -12,42 +12,33 @@
     --panel-bg: rgba(255, 255, 255, 0.9); /* Translucent panels */
     --border-color: #e2e8f0;   /* Clean borders */
     --text-main: #0f172a;
-    --text-muted: #64748b;
+    --text-muted: #475569;
     
     /* Terminal Signal Colors */
     --signal-bearish: #ef4444; /* Red-500 */
     --signal-bullish: #10b981; /* Emerald-500 */
     --signal-neutral: #94a3b8; /* Slate-400 */
-    --signal-accent: #3b82f6;  /* Blue-500 */
+    --signal-accent: #6366f1;  /* Indigo-500 */
 
     --font-mono: 'Roboto Mono', monospace;
     --font-sans: 'Inter', sans-serif;
-    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.08); /* Unified softer shadow */
 }
 
 body {
     font-family: var(--font-sans);
     background: var(--bg-base);
+    background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
     color: var(--text-main);
     overflow: hidden;
     height: 100vh;
     width: 100vw;
 }
 
-/* Subtle animated gradient background for light theme */
 body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 25%, #f1f5f9 50%, #dbeafe 75%, #f8fafc 100%);
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
-    z-index: -2;
-}
-
-@keyframes gradientShift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    display: none;
 }
 
 /* ── Typography & Basics ── */

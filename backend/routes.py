@@ -14,6 +14,8 @@ from strategies import (
 )
 from analyzer import generate_market_analysis
 from news_fetcher import get_stock_news
+from signal_tracker import save_signal, calculate_accuracy, get_dashboard_stats, get_supabase
+import threading
 
 # Load win rates from pre-calculated file
 def load_win_rates():
@@ -192,6 +194,16 @@ def register_routes(app):
         final = sorted(results, key=lambda x: x['score'], reverse=True)[:5]
         print(f"✅ Scan done! {len(results)} signals found, top {len(final)} returned")
 
+        # ── SUPABASE SIGNAL SAVING ──
+        for sig in final:
+            threading.Thread(target=save_signal, args=(
+                sig['symbol'], mode, sig['score'], sig['ltp'],
+                sig['execution']['target1'], sig['execution']['sl'],
+                sig['execution']['rr_ratio'], sig['bias']
+            )).start()
+        # ────────────────────────────
+
+
         mode_key = mode if mode != "LONG_TERM" else "LONG_TERM"
         win_rate_info = None
         if WIN_RATES_DATA and 'modes' in WIN_RATES_DATA:
@@ -312,3 +324,35 @@ def register_routes(app):
         except Exception as e:
             print(f"Error fetching indices: {e}")
             return jsonify({"status": "error", "message": f"Rate limit exceeded or unavailable. {e}"}), 503
+
+    # ── SUPABASE DASHBOARD ROUTES ──────────────────────────────────
+    @app.route('/signals', methods=['GET'])
+    def get_signals():
+        db = get_supabase()
+        if not db:
+            return jsonify({"status": "error", "message": "Supabase not configured"}), 500
+        
+        strategy = request.args.get('strategy')
+        query = db.table("signals").select("*").order("created_at", desc=True)
+        if strategy and strategy != "all":
+            query = query.eq("strategy", strategy)
+            
+        data = query.limit(50).execute()
+        return jsonify({"status": "success", "data": data.data})
+        
+    @app.route('/accuracy', methods=['GET'])
+    def get_accuracy():
+        return jsonify({
+            "status": "success",
+            "overall": calculate_accuracy(None),
+            "swing": calculate_accuracy("swing"),
+            "longterm": calculate_accuracy("longterm"),
+            "intraday": calculate_accuracy("intraday")
+        })
+
+    @app.route('/stats', methods=['GET'])
+    def get_stats():
+        return jsonify({
+            "status": "success",
+            "data": get_dashboard_stats()
+        })

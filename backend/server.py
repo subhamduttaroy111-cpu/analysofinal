@@ -66,6 +66,10 @@ def sitemap():
 
 register_routes(app)
 
+from scheduler import start_scheduler
+start_scheduler()
+
+
 # ── Local entry point ────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))

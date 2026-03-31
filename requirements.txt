@@ -36,5 +36,5 @@ google-generativeai>=0.3.0
 feedparser>=6.0.0
 
 # ── Database & Scheduling ──────────────────────────
-supabase>=1.0.0,<2.0.0
+supabase>=2.0.0
 APScheduler>=3.10.0

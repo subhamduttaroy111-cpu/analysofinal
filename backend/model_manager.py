@@ -17,7 +17,7 @@ try:
         USE_ENHANCED_LSTM = False
     LSTM_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️  LSTM models unavailable (missing dependency): {e}")
+    print("[WARNING] LSTM models unavailable (missing dependency): " + str(e))
     LSTM_AVAILABLE = False
 
 

@@ -128,6 +128,85 @@ def run_multi_timeframe_analysis(symbol):
             
     return analysis
 
+# ================= MARKET CONTEXT ENGINE =================
+# Pre-scan: fetch Nifty 50 trend + sector sentiment (cached 5 mins)
+
+_MARKET_CONTEXT_CACHE = {"data": None, "timestamp": 0}
+_MARKET_CONTEXT_TTL = 300  # 5 minutes
+
+def get_market_context():
+    """Fetch Nifty 50 trend and sector sentiment. Cached for 5 mins."""
+    current_time = time.time()
+    if _MARKET_CONTEXT_CACHE["data"] and (current_time - _MARKET_CONTEXT_CACHE["timestamp"]) < _MARKET_CONTEXT_TTL:
+        return _MARKET_CONTEXT_CACHE["data"]
+
+    context = {'nifty_trend': 'NEUTRAL', 'sector_sentiment': 0, 'htf_trend': 'NEUTRAL'}
+
+    try:
+        # ── Nifty 50 trend (Quick 5-day check) ──
+        nifty_df = yf.download('^NSEI', period='3mo', interval='1d', progress=False)
+        if isinstance(nifty_df.columns, pd.MultiIndex):
+            nifty_df.columns = nifty_df.columns.get_level_values(0)
+        if not nifty_df.empty and len(nifty_df) >= 50:
+            nifty_close = nifty_df['Close'].iloc[-1]
+            nifty_ema50 = nifty_df['Close'].ewm(span=50, adjust=False).mean().iloc[-1]
+            nifty_ema200 = nifty_df['Close'].ewm(span=200, adjust=False).mean().iloc[-1] if len(nifty_df) >= 200 else nifty_ema50
+            
+            if nifty_close > nifty_ema50 and nifty_close > nifty_ema200:
+                context['nifty_trend'] = 'BULLISH'
+            elif nifty_close < nifty_ema50 and nifty_close < nifty_ema200:
+                context['nifty_trend'] = 'BEARISH'
+            else:
+                context['nifty_trend'] = 'NEUTRAL'
+            print(f"📊 Nifty 50 Trend: {context['nifty_trend']} (Price: {nifty_close:.0f}, EMA50: {nifty_ema50:.0f})")
+    except Exception as e:
+        print(f"⚠️ Nifty context fetch failed: {e}")
+
+    try:
+        # ── Sector sentiment from news engine ──
+        from sentiment_api import get_globe_data
+        globe = get_globe_data()
+        if globe and 'sectors' in globe:
+            # Build a dict of sector->sentiment for quick lookup
+            context['sector_map'] = {}
+            for sec in globe['sectors']:
+                context['sector_map'][sec['name'].lower()] = sec['avg_sentiment']
+            # Overall market sentiment
+            total_bull = globe.get('summary', {}).get('bullish', 0)
+            total_bear = globe.get('summary', {}).get('bearish', 0)
+            total = total_bull + total_bear + globe.get('summary', {}).get('neutral', 0)
+            if total > 0:
+                context['sector_sentiment'] = (total_bull - total_bear) / total
+            print(f"📰 News Sentiment: Bull={total_bull} Bear={total_bear} → Score={context['sector_sentiment']:.2f}")
+    except Exception as e:
+        print(f"⚠️ Sentiment context fetch failed: {e}")
+
+    _MARKET_CONTEXT_CACHE["data"] = context
+    _MARKET_CONTEXT_CACHE["timestamp"] = current_time
+    return context
+
+
+def get_stock_sector_sentiment(symbol, context):
+    """Get sector-specific sentiment for a stock based on keyword matching."""
+    sector_map = context.get('sector_map', {})
+    sym = symbol.replace('.NS', '').lower()
+    
+    # Simple mapping of known stocks to sectors
+    STOCK_SECTOR_MAP = {
+        'banking & fin': ['hdfcbank', 'icicibank', 'sbin', 'kotakbank', 'axisbank', 'bajfinance', 'bajajfinsv', 'indusindbk', 'bankbaroda', 'pnb'],
+        'it & tech': ['tcs', 'infy', 'wipro', 'hcltech', 'techm', 'ltim', 'persistent', 'coforge', 'mphasis'],
+        'auto': ['tatamotors', 'maruti', 'bajaj-auto', 'heromotoco', 'm&m', 'eichermot', 'ashokley', 'tvsmotors'],
+        'pharma': ['sunpharma', 'drreddy', 'cipla', 'divislab', 'apollohosp', 'lupin', 'auropharma'],
+        'energy & metal': ['reliance', 'ongc', 'ntpc', 'powergrid', 'coalindia', 'tatasteel', 'jswsteel', 'hindalco', 'adanient', 'adanigreen', 'adaniports'],
+        'fmcg': ['itc', 'hindunilvr', 'nestleind', 'dabur', 'britannia', 'godrejcp', 'marico', 'tataconsum'],
+    }
+    
+    for sector, stocks in STOCK_SECTOR_MAP.items():
+        if sym in stocks:
+            return sector_map.get(sector, 0)
+    return context.get('sector_sentiment', 0)
+
+
 # ================= API ROUTES =================
 
 def register_routes(app):
@@ -187,6 +266,10 @@ def register_routes(app):
             print(f"[ERROR] ❌ Download failed: {e}")
             return jsonify({"status": "error", "message": f"Download failed: {str(e)}"}), 503
 
+        # ═══ PRE-SCAN: Fetch market context (Nifty trend + sector sentiment) ═══
+        print("[CONTEXT] 📊 Fetching market context (Nifty + Sectors)...")
+        market_context = get_market_context()
+
         # ═══ STEP 3 & 4: Parallel processing with global models ═══
         def process_stock(s):
             """Process single stock with STEP 7 confidence scoring"""
@@ -198,6 +281,11 @@ def register_routes(app):
                 df = add_indicators(df)
 
                 # STEP 4: Use global cached model manager (loaded once at startup)
+                # Build stock-specific context with sector sentiment
+                stock_context = dict(market_context) if market_context else None
+                if stock_context:
+                    stock_context['sector_sentiment'] = get_stock_sector_sentiment(s, market_context)
+
                 if use_ai:
                     if mode == "INTRADAY":
                         score, bias, reasons, sl, tgt, rr = intraday_logic_ai(df)
@@ -207,9 +295,9 @@ def register_routes(app):
                         score, bias, reasons, sl, tgt, rr = longterm_logic_ai(df)
                 else:
                     if mode == "INTRADAY":
-                        score, bias, reasons, sl, tgt, rr = intraday_logic(df)
+                        score, bias, reasons, sl, tgt, rr = intraday_logic(df, market_context=stock_context)
                     elif mode == "SWING":
-                        score, bias, reasons, sl, tgt, rr = swing_logic(df)
+                        score, bias, reasons, sl, tgt, rr = swing_logic(df, market_context=stock_context)
                     else:
                         # Get fundamental data for long-term filter
                         try:
@@ -222,7 +310,8 @@ def register_routes(app):
                         score, bias, reasons, sl, tgt, rr = longterm_logic(
                             df, 
                             pe_ratio=pe_ratio, 
-                            market_cap=market_cap
+                            market_cap=market_cap,
+                            market_context=stock_context
                         )
 
                 current_price = round(float(df['Close'].iloc[-1]), 2)

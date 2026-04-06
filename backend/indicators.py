@@ -11,20 +11,23 @@ def add_indicators(df):
     df['EMA_200'] = df['Close'].ewm(span=200, adjust=False).mean()
     df['SMA_20'] = df['Close'].rolling(window=20).mean()
 
-    # RSI
+    # RSI — Wilder's Smoothing (RMA) to match TradingView/Zerodha
     delta = df['Close'].diff()
-    gain = delta.clip(lower=0).rolling(14).mean()
-    loss = -delta.clip(upper=0).rolling(14).mean()
-    rs = gain / loss
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    # Wilder's RMA: ewm with com=(period-1) is identical to Wilder's smoothing
+    avg_gain = gain.ewm(com=13, min_periods=14, adjust=False).mean()
+    avg_loss = loss.ewm(com=13, min_periods=14, adjust=False).mean()
+    rs = avg_gain / avg_loss
     df['RSI'] = 100 - (100 / (1 + rs))
 
-    # ATR
+    # ATR — Wilder's Smoothing (RMA) to match TradingView/Zerodha
     high_low = df['High'] - df['Low']
     high_close = np.abs(df['High'] - df['Close'].shift())
     low_close = np.abs(df['Low'] - df['Close'].shift())
     ranges = pd.concat([high_low, high_close, low_close], axis=1)
     true_range = np.max(ranges, axis=1)
-    df['ATR'] = true_range.rolling(14).mean()
+    df['ATR'] = true_range.ewm(com=13, min_periods=14, adjust=False).mean()
 
     # MACD
     exp1 = df['Close'].ewm(span=12, adjust=False).mean()
@@ -44,9 +47,16 @@ def add_indicators(df):
     # Momentum
     df['Momentum'] = df['Close'] - df['Close'].shift(10)
     
-    # VWAP - Used for intraday trend direction
-    df['Cum_Vol'] = df['Volume'].cumsum()
-    df['Cum_VolPrice'] = (df['Close'] * df['Volume']).cumsum()
+    # VWAP — Daily Reset (resets each trading day for correct intraday values)
+    # Group by date so multi-day intraday data resets VWAP every morning
+    if hasattr(df.index, 'date'):
+        trading_date = pd.Series(df.index.date, index=df.index)
+    else:
+        trading_date = pd.Series(0, index=df.index)  # fallback: treat as one session
+    df['Cum_Vol'] = df.groupby(trading_date)['Volume'].cumsum()
+    df['Cum_VolPrice'] = df.groupby(trading_date).apply(
+        lambda g: (g['Close'] * g['Volume']).cumsum()
+    ).droplevel(0)
     df['VWAP'] = df['Cum_VolPrice'] / df['Cum_Vol']
 
     # SuperTrend - Used for swing trading signals

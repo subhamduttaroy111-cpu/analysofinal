@@ -1,10 +1,16 @@
 import pandas as pd
 import numpy as np
 
-def intraday_logic(df):
+def intraday_logic(df, market_context=None):
     """
     Institutional Intraday Strategy: ORB + VWAP + EMA Confluence
     Estimated accuracy: 60-65% on NSE F&O stocks
+    
+    market_context (dict|None): {
+        'nifty_trend': 'BULLISH' | 'BEARISH' | 'NEUTRAL',
+        'sector_sentiment': float (-1 to +1),
+        'htf_trend': 'BULLISH' | 'BEARISH' | 'NEUTRAL'  # Daily trend
+    }
     """
     last = df.iloc[-1]
     prev = df.iloc[-2]
@@ -104,6 +110,35 @@ def intraday_logic(df):
         score -= 15
         reasons.append("⚠ MARKET REGIME: Price below 200 EMA - bearish environment")
 
+    # ===== TOP-DOWN MARKET CONTEXT (Index + Sector + HTF) =====
+    if market_context:
+        # Nifty 50 Index check
+        nifty = market_context.get('nifty_trend', 'NEUTRAL')
+        if nifty == 'BEARISH':
+            score -= 20
+            reasons.append("⚠ NIFTY 50 BEARISH - market headwind, reduce position")
+        elif nifty == 'BULLISH':
+            score += 10
+            reasons.append("✓ NIFTY 50 BULLISH - market tailwind")
+
+        # Sector sentiment check
+        sector_sent = market_context.get('sector_sentiment', 0)
+        if sector_sent < -0.15:
+            score -= 12
+            reasons.append(f"⚠ SECTOR SENTIMENT NEGATIVE ({sector_sent:.2f}) - sector under pressure")
+        elif sector_sent > 0.15:
+            score += 8
+            reasons.append(f"✓ SECTOR SENTIMENT POSITIVE ({sector_sent:.2f}) - sector momentum")
+
+        # Higher Timeframe (Daily) trend confirmation
+        htf = market_context.get('htf_trend', 'NEUTRAL')
+        if htf == 'BEARISH':
+            score -= 15
+            reasons.append("⚠ DAILY TREND BEARISH - intraday buy is counter-trend")
+        elif htf == 'BULLISH':
+            score += 10
+            reasons.append("✓ DAILY TREND BULLISH - intraday buy is with the trend")
+
     # ===== CONFIDENCE SCORE =====
     score = max(0, min(100, score))
     if score >= 80 and ema_aligned:
@@ -133,10 +168,11 @@ def intraday_logic(df):
     else:
         bias = "BEARISH"
 
-    # ===== RISK MANAGEMENT (ATR based) =====
-    sl = round(last['Close'] - (last['ATR'] * 1.2), 2)
-    tgt1 = round(last['Close'] + (last['ATR'] * 2.0), 2)
-    tgt2 = round(last['Close'] + (last['ATR'] * 3.5), 2)
+    # ===== RISK MANAGEMENT (ATR based — 1.5x buffer for NSE noise) =====
+    atr_val = last['ATR'] if not pd.isna(last['ATR']) else last['Close'] * 0.015
+    sl = round(last['Close'] - (atr_val * 1.5), 2)
+    tgt1 = round(last['Close'] + (atr_val * 2.5), 2)
+    tgt2 = round(last['Close'] + (atr_val * 4.0), 2)
     tgt = tgt1  # Primary target for compatibility
 
     risk = last['Close'] - sl
@@ -150,10 +186,15 @@ def intraday_logic(df):
 
     return score, bias, reasons, sl, tgt, rr_ratio
 
-def swing_logic(df):
+def swing_logic(df, market_context=None):
     """
     Institutional Swing Strategy: SuperTrend + RSI + EMA Stack
     Estimated accuracy: 58-62% on NSE daily charts
+    
+    market_context (dict|None): {
+        'nifty_trend': 'BULLISH' | 'BEARISH' | 'NEUTRAL',
+        'sector_sentiment': float (-1 to +1)
+    }
     """
     last = df.iloc[-1]
     prev = df.iloc[-2]
@@ -301,6 +342,24 @@ def swing_logic(df):
         score += 5
         reasons.append("✓ Positive price momentum")
 
+    # ===== TOP-DOWN MARKET CONTEXT (Index + Sector) =====
+    if market_context:
+        nifty = market_context.get('nifty_trend', 'NEUTRAL')
+        if nifty == 'BEARISH':
+            score -= 15
+            reasons.append("⚠ NIFTY 50 BEARISH - avoid swing longs")
+        elif nifty == 'BULLISH':
+            score += 8
+            reasons.append("✓ NIFTY 50 BULLISH - favorable for swing trades")
+
+        sector_sent = market_context.get('sector_sentiment', 0)
+        if sector_sent < -0.15:
+            score -= 10
+            reasons.append(f"⚠ SECTOR SENTIMENT NEGATIVE ({sector_sent:.2f})")
+        elif sector_sent > 0.15:
+            score += 6
+            reasons.append(f"✓ SECTOR SENTIMENT POSITIVE ({sector_sent:.2f})")
+
     # ===== CONFIDENCE SCORE =====
     score = max(0, min(100, score))
     if score >= 80 and ema_full_stack:
@@ -348,10 +407,15 @@ def swing_logic(df):
 
     return score, bias, reasons, sl, tgt, rr_ratio
 
-def longterm_logic(df, pe_ratio=None, market_cap=None):
+def longterm_logic(df, pe_ratio=None, market_cap=None, market_context=None):
     """
     Institutional Long-Term Strategy: 200 DMA + Relative Strength
     Estimated accuracy: 55-65% on NSE weekly/daily data
+    
+    market_context (dict|None): {
+        'nifty_trend': 'BULLISH' | 'BEARISH' | 'NEUTRAL',
+        'sector_sentiment': float (-1 to +1)
+    }
     """
     last = df.iloc[-1]
     score = 40
@@ -559,6 +623,24 @@ def longterm_logic(df, pe_ratio=None, market_cap=None):
                 )
     except Exception:
         pass
+
+    # ===== TOP-DOWN MARKET CONTEXT (Index + Sector) =====
+    if market_context:
+        nifty = market_context.get('nifty_trend', 'NEUTRAL')
+        if nifty == 'BEARISH':
+            score -= 15
+            reasons.append("⚠ NIFTY 50 BEARISH - risky for long-term entries")
+        elif nifty == 'BULLISH':
+            score += 10
+            reasons.append("✓ NIFTY 50 BULLISH - ideal for long-term accumulation")
+
+        sector_sent = market_context.get('sector_sentiment', 0)
+        if sector_sent < -0.15:
+            score -= 10
+            reasons.append(f"⚠ SECTOR SENTIMENT NEGATIVE ({sector_sent:.2f})")
+        elif sector_sent > 0.15:
+            score += 8
+            reasons.append(f"✓ SECTOR SENTIMENT POSITIVE ({sector_sent:.2f})")
 
     # ===== CONFIDENCE SCORE =====
     score = max(0, min(100, score))

@@ -33,14 +33,14 @@ if (logoutBtn) {
 // Auth State Check (lightweight — firebase-config.js handles the heavy lifting)
 (function checkAuth() {
     const isLoginPage = window.location.pathname.includes("login.html");
-    const isIndexPage = window.location.pathname.includes("index.html") || window.location.pathname.endsWith("/");
+    const isIndexPage = window.location.pathname === "/" || window.location.pathname.endsWith("/index.html") || window.location.pathname === "";
     const userData = localStorage.getItem("analyso_user");
 
     if (userData) {
         const user = JSON.parse(userData);
 
         if (isLoginPage) {
-            window.location.href = "index.html";
+            window.location.href = "/";
         }
 
         // Update User Profile UI

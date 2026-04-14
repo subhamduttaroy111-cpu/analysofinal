@@ -206,7 +206,7 @@ if (oldLoginForm && !document.getElementById("loginModalForm")) {
             }
 
             // Redirect to main app from login.html
-            window.location.href = "index.html";
+            window.location.href = "/";
 
         } catch (err) {
             console.error("Auth error:", err);
@@ -237,7 +237,7 @@ onAuthStateChanged(auth, (user) => {
         window.isGuestMode = false;
 
         if (isLoginPage) {
-            window.location.href = "index.html";
+            window.location.href = "/";
             return;
         }
 
